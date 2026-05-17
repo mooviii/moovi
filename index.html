@@ -263,7 +263,7 @@ const codeDisplay = document.getElementById("codeDisplay");
 const instructionText = document.getElementById("instructionText"); 
 const answerBox = document.getElementById("answerBox");
 
-sounds.bg.volume = 0.008; 
+sounds.bg.volume = 0.004; 
 
 function getTechnicolor() {
     const colors = [
@@ -283,13 +283,24 @@ function playSound(s) { s.currentTime = 0; s.play().catch(()=>{}); }
 document.addEventListener("keydown", (e) => { 
     if (e.key.toLowerCase() === "m") { isUserMuted = !isUserMuted; sounds.bg.muted = isUserMuted; return; } 
 
-    if (state === "intro" && e.key === "Enter") {
-        state = "mode_selection";
-        sounds.bg.play();
-        document.getElementById("introScreen").style.display = "none";
-        document.getElementById("modeScreen").style.display = "flex";
-        return;
-    }
+  if (state === "intro" && e.key === "Enter") {
+    state = "mode_selection";
+    
+    // Intentar reproducir con manejo de promesas (Recomendado para navegadores)
+    sounds.bg.play().then(() => {
+        console.log("Música iniciada correctamente");
+    }).catch(error => {
+        console.log("El navegador bloqueó el audio temporalmente. Reintentando al primer clic...");
+        // Si falla por el bloqueo, obligamos a que suene al hacer clic en cualquier parte
+        document.addEventListener('click', () => {
+            sounds.bg.play();
+        }, { once: true });
+    });
+
+    document.getElementById("introScreen").style.display = "none";
+    document.getElementById("modeScreen").style.display = "flex";
+    return;
+}
 
     if (e.key === "Escape") { 
         if (state === "mode_selection" || state === "intro") return; 
