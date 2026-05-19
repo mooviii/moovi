@@ -14,6 +14,14 @@ const videoDB = {
 "112": { src: "video12.mp4", title: "En el nombre del padre", year: "1993", director: "Jim Sheridan" },
 "113": { src: "video13.mp4", title: "Reservoir Dogs", year: "1992", director: "Quentin Tarantino" },
 "114": { src: "video14.mp4", title: "El club de la lucha", year: "1999", director: "David Fincher" },
+"115": { src: "video15.mp4", title: "El apartamento", year: "1960", director: "Billy Wilder" },
+"116": { src: "video16.mp4", title: "La gran evasión", year: "1963", director: "John Sturges" },
+"117": { src: "video17.mp4", title: "El bueno, el feo y el malo", year: "1966", director: "Sergio Leone" },
+"118": { src: "video18.mp4", title: "Doctor Zhivago", year: "1965", director: "David Lean" },
+"119": { src: "video19.mp4", title: "Espartaco", year: "1960", director: "Stanley Kubrick" },
+"120": { src: "video20.mp4", title: "La dolce vita", year: "1960", director: "Federico Fellini" },
+"121": { src: "video21.mp4", title: "2001, Una odisea en el espacio", year: "1968", director: "Stanley Kubrick" },
+"122": { src: "video22.mp4", title: "Cowboy de medianoche", year: "1969", director: "John Schlesinger" },
 
 
 };
