@@ -1,0 +1,927 @@
+<!DOCTYPE html> 
+<html lang="es"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <title>MOOVI</title> 
+    <style> 
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial Black', 'Gadget', sans-serif; } 
+        body { background: black; overflow: hidden; width: 100vw; height: 100vh; } 
+
+        :root {
+             --v-width-pct: 82.5%;    
+             --v-height-pct: 86%;     
+             --v-radius: 10px; 
+        }
+
+        /* --- FUNDIDO INICIAL --- */
+        #blackout {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: black;
+            z-index: 999;
+            pointer-events: none;
+            animation: fadeToTrans 3s forwards;
+        }
+
+        @keyframes fadeToTrans {
+            0% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+
+        /* --- FONDO ANIMADO --- */ 
+        .curtain-bg { 
+             position: absolute; 
+             top: 0; left: 0; width: 100%; height: 100%; 
+             background: url('medios/fondo.jpg') center/cover no-repeat; 
+             z-index: 1; 
+             animation: curtainSway 8s ease-in-out infinite alternate; 
+             transform-origin: top center; 
+        } 
+        .curtain-overlay { 
+             position: absolute; 
+             top: 0; left: 0; width: 100%; height: 100%; 
+             background: linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(255,255,255,0.05) 25%, rgba(0,0,0,0.2) 50%, rgba(255,255,255,0.05) 75%, rgba(0,0,0,0.2) 100%); 
+             background-size: 200% 100%; 
+             animation: shadowMove 12s linear infinite; 
+             pointer-events: none; 
+             z-index: 2; 
+        } 
+
+        @keyframes curtainSway { 
+             0% { transform: scale(1.0) skewX(0deg); filter: brightness(1); } 
+             50% { transform: scale(1.02) skewX(1deg); filter: brightness(1.1); } 
+             100% { transform: scale(1.01) skewX(-1deg); filter: brightness(0.95); } 
+        } 
+        @keyframes shadowMove { 0% { background-position: 0% 0%; } 100% { background-position: 200% 0%; } } 
+
+        /* --- ANIMACIONES --- */ 
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes zoomOutEffect { from { transform: scale(1.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes pulseIndicator { 0% { transform: scale(1); opacity: 0.9; filter: drop-shadow(0 0 10px rgba(255,255,255,0.4)); } 50% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 35px rgba(255,255,255,0.9)); } 100% { transform: scale(1); opacity: 0.9; filter: drop-shadow(0 0 10px rgba(255,255,255,0.4)); } } 
+         
+        @keyframes popNumber {
+            0% { transform: scale(1); box-shadow: 0 0 0px rgba(255,255,255,0); border-color: #ddd; }
+            50% { transform: scale(1.15); box-shadow: 0 0 30px rgba(255,255,255,0.8); border-color: #fff; }
+            100% { transform: scale(1); box-shadow: 0 0 0px rgba(255,255,255,0); border-color: #ddd; }
+        }
+
+        .pop { animation: popNumber 0.5s ease-out; }
+        .pop-loop { animation: popNumber 3s infinite ease-in-out; }
+        .zoom-in-screen { animation: zoomOutEffect 0.8s ease-out forwards; }
+
+        .screen { position: absolute; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 10; } 
+         
+        .metal-text {  
+             text-transform: uppercase;  
+             background: linear-gradient(to bottom, #ffffff 0%, #eeeeee 100%);  
+             -webkit-background-clip: text;  
+             -webkit-text-fill-color: transparent;  
+             filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));  
+             text-shadow: 0px 1px 0px #cccccc, 0px 2px 0px #bbbbbb, 0px 3px 0px #aaaaaa, 0px 4px 15px rgba(0,0,0,0.7);  
+        } 
+
+        /* --- PRE-START SCREEN --- */
+        #prestartScreen { background: black; z-index: 30; gap: 3vh; }
+        #startBtnImg { width: 10vw; max-width: 250px; cursor: pointer; user-select: none; -webkit-user-drag: none; }
+        .prestart-text { font-size: 1.3vw; letter-spacing: 0.4vw; animation: pulseIndicator 3s infinite ease-in-out; cursor: pointer; }
+
+        /* --- PORTADA --- */
+        #introScreen { z-index: 20; }
+        .intro-bg {
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            background: url('medios/portada.png') center/cover;
+        }
+        .intro-ui { 
+            position: relative; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            animation: zoomOutEffect 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; 
+        }
+        .logo-box { background: rgba(255, 255, 255, 0.1); border: 4px solid #ddd; border-radius: 20px; padding: 25px 50px; box-shadow: 0 0 20px rgba(0,0,0,0.5); margin-top: -15vh; }
+        .start-prompt { position: absolute; bottom: 35vh; font-size: 1.4vw; letter-spacing: 0.5vw; animation: pulseIndicator 4s infinite ease-in-out; }
+        .copyright-text { position: absolute; bottom: 28vh; width: 100%; font-size: 1.0vw; color: rgba(255,255,255,0.4); letter-spacing: 0.1vw; text-align: center; font-weight: normal; }
+
+        /* --- SELECCIÓN DE MODO --- */
+        .mode-option { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-size: 2.2vw; 
+            display: flex; 
+            align-items: center; 
+            font-weight: bold;
+            letter-spacing: 0.1vw;
+        }
+        .mode-num { 
+            width:65px; 
+            height:60px; 
+            margin-right:25px; 
+            border-radius: 10px; 
+            border: 2px solid #ddd; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: rgba(255,255,255,0.1); 
+            font-family: 'Arial Black', sans-serif; 
+        }
+
+        /* --- PANTALLA DE RULETA INTEGRADA --- */
+        #rouletteScreen { 
+            z-index: 15; 
+            perspective: 1000px;
+        }
+        .ruleta-container {
+            width: 80vmin;
+            height: 80vmin; 
+            aspect-ratio: 1 / 1; 
+            overflow: hidden;
+            position: relative;
+            border-radius: 50%; 
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6); 
+            background-color: transparent; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: zoomSuave 1.5s ease-out forwards;
+        }
+        .sprite-ruleta {
+            position: absolute;
+            width: 2880vmin; 
+            height: 100%;
+            background-image: url('medios/tu-sprite-sheet-36.png'); 
+            background-size: auto 100%; 
+            background-repeat: no-repeat;
+            background-position: 0vmin 0px;
+            left: 0; 
+            will-change: background-position; 
+        }
+        @keyframes zoomSuave {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- INPUT --- */
+        #mainScreen { flex-direction: column; justify-content: flex-start; padding-top: 10vh; position: relative; }
+        #rouletteResultImg { width: 14vw; max-width: 220px; height: auto; margin: 2vh 0; display: none; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+        #codeDisplay { display: flex; gap: 2vw; min-height: 18vw; align-items: center; justify-content: center; margin-top: 2vh; } 
+        .num-box { 
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 12px; 
+            border: 2px solid #dddddd; 
+            display: inline-flex; 
+            justify-content: center; 
+            align-items: center; 
+            width: 12vw; 
+            height: 18vw; 
+            transition: all 0.2s;
+        } 
+        .num-box b { font-size: 12vw; }
+        .sub-text { font-size: 1.8vw; color: #000; text-transform: uppercase; letter-spacing: 0.2vw; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 8px rgba(255,255,255,0.8); text-align: center; max-width: 80%; } 
+        
+        .error-msg { 
+            font-size: 9vw; 
+            color: #ff0000; 
+            font-weight: 900; 
+            letter-spacing: -0.2vw; 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vw;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* --- ESTILOS DE LA CUENTA ATRÁS INTEGRADA --- */
+        #countdownScreen {
+            z-index: 60;
+        }
+
+        #countdown {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-weight: 900;
+            color: #ffffff;
+            text-align: center;
+            line-height: 1;
+            user-select: none;
+            z-index: 10;
+        }
+
+        .active-timer {
+            font-size: 300px;
+            animation: pulseTimer 2s infinite ease-in-out;
+        }
+
+        .finished-timer {
+            font-size: 180px;
+            text-shadow: 
+                0 6px 16px rgba(0, 0, 0, 1),
+                0 0 35px rgba(255, 255, 255, 0.75), 
+                0 0 50px rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .active-timer { font-size: 140px; }
+            .finished-timer { font-size: 90px; }
+        }
+
+        @keyframes pulseTimer {
+            0%, 100% {
+                transform: scale(0.97);
+                text-shadow: 0 4px 10px rgba(0, 0, 0, 0.95), 0 0 20px rgba(255, 255, 255, 0.45);
+            }
+            50% {
+                transform: scale(1.03);
+                text-shadow: 0 8px 20px rgba(0, 0, 0, 1), 0 0 35px rgba(255, 255, 255, 0.75), 0 0 50px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        /* --- VIDEO Y CELULOIDE --- */
+        #videoScreen { background: black; z-index: 50; } 
+        .celuloide-frame { position: relative; height: 100vh; aspect-ratio: 16 / 9; display: flex; justify-content: center; align-items: center; }
+        .celuloide-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('medios/celuloide.png') center/contain no-repeat; z-index: 52; pointer-events: none; }
+        
+        #videoPlayer { position: absolute; width: var(--v-width-pct); height: var(--v-height-pct); object-fit: cover; z-index: 51; border-radius: var(--v-radius); transition: opacity 1.5s ease; }  
+         
+        /* --- CORRECCIÓN HALO ALTAVOZ / NOTA --- */
+        #audioModeIndicator { position: absolute; z-index: 53; display: none; font-size: 18vw; color: #ddd; animation: pulseIndicator 3s infinite ease-in-out; }
+         
+        /* --- AJUSTES DE FOTOGRAMAS --- */
+        .photo-container { position: absolute; width: var(--v-width-pct); height: var(--v-height-pct); z-index: 51; border-radius: var(--v-radius); overflow: hidden; display: none; background: #000; }
+        .photo-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 3.5s ease-in-out; } 
+        .photo-slide.active { opacity: 1; }
+        .fade-in-container { animation: fadeIn 1.5s ease forwards; }
+        .fade-out-container { animation: fadeOut 1.5s ease forwards; } 
+
+        /* --- RESPUESTA --- */
+        .answer-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('medios/respuesta.jpg') center/cover no-repeat; z-index: 5; }
+        .answer-box { 
+            position: relative; 
+            border: 4px solid rgba(255,255,255,0.7); 
+            border-radius: 25px; 
+            padding: 4vh 6vw; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 1.5vh; 
+            box-shadow: 0 0 60px rgba(0,0,0,0.9), inset 0 0 20px rgba(255,255,255,0.1); 
+            max-width: 85vw; 
+            z-index: 10; 
+            animation: zoomOutEffect 0.7s ease-out; 
+        }
+        #videoTitle { font-size: 4.2vw; letter-spacing: 0.1vw; }
+        #videoYear { font-size: 13vw; line-height: 0.9; margin: 1vh 0; }
+        #videoDirector { font-size: 2.8vw; letter-spacing: 0.2vw; }
+    </style> 
+</head> 
+<body> 
+
+<div id="blackout"></div>
+
+<div id="prestartScreen" class="screen">
+     <img id="startBtnImg" src="medios/1boton.png" alt="Iniciar" onmousedown="triggerIntroTransition()">
+     <div class="metal-text prestart-text" onmousedown="triggerIntroTransition()">INICIAR</div>
+</div>
+
+<div id="introScreen" class="screen" style="display:none;">
+     <div class="intro-bg"></div>
+     <div class="intro-ui">
+         <div class="logo-box"><div class="metal-text" style="font-size:12vw; line-height:1;">MOOVI</div></div>
+         <div class="metal-text start-prompt">PULSA ENTER PARA INICIAR JUEGO</div>
+         <div class="copyright-text">2026 © all rights reserved</div>
+     </div>
+</div>
+
+<div class="curtain-bg"></div> 
+<div class="curtain-overlay"></div> 
+
+<div id="modeScreen" class="screen" style="display:none;"> 
+     <div class="metal-text" style="font-size: 4vw; margin-bottom: 5vh; letter-spacing: 0.6vw; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px;">MODOS DE JUEGO</div> 
+     <div style="display: flex; flex-direction: column; gap: 4vh;"> 
+         <div class="metal-text mode-option"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">1</b></div> FÁCIL ( AUDIO + VIDEO )</div> 
+         <div class="metal-text mode-option"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">2</b></div> INTERMEDIO ( FOTOGRAMAS )</div> 
+         <div class="metal-text mode-option"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">3</b></div> DIFÍCIL ( SOLO AUDIO )</div> 
+         <div class="metal-text mode-option"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">4</b></div> EXPERTO ( BANDA SONORA )</div> 
+         <div class="metal-text mode-option"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">5</b></div> ALEATORIO</div> 
+     </div> 
+</div> 
+
+<div id="rouletteScreen" class="screen" style="display:none;">
+    <div class="ruleta-container">
+        <div id="ruleta" class="sprite-ruleta"></div>
+    </div>
+</div>
+
+<div id="mainScreen" class="screen" style="display:none;"> 
+     <div id="instructionText" class="sub-text">Introduce el código de la tarjeta y pulsa enter</div> 
+     <img id="rouletteResultImg" src="" alt="Resultado Categoría">
+     <div id="codeDisplay"></div> 
+</div> 
+
+<!-- PANTALLA DE CUENTA ATRÁS -->
+<div id="countdownScreen" class="screen" style="display:none;">
+    <div class="answer-bg"></div>
+    <div id="countdown" class="active-timer">45</div>
+</div>
+
+<div id="videoScreen" class="screen" style="display:none;"> 
+     <div class="celuloide-frame">
+         <div class="celuloide-overlay"></div>
+         <div id="audioModeIndicator">🔊</div> 
+         <div id="photoContainer" class="photo-container"><img id="imgSlide1" class="photo-slide"><img id="imgSlide2" class="photo-slide"></div>
+         <video id="videoPlayer"></video> 
+     </div>
+</div> 
+
+<div id="blackScreen" class="screen" style="display:none;"> 
+     <div class="answer-bg"></div>
+     <div class="metal-text" style="position:relative; z-index:10; font-size: 5.5vw; line-height: 1.2; animation: pulseIndicator 4s infinite ease-in-out;">PULSA ENTER PARA<br>VER LA SOLUCIÓN</div> 
+</div> 
+
+<div id="titleScreen" class="screen" style="display:none;"> 
+     <div class="answer-bg"></div>
+     <div id="answerBox" class="answer-box">
+         <div id="videoTitle" class="metal-text">TITULO</div> 
+         <div id="videoYear" class="metal-text">0000</div> 
+         <div id="videoDirector" class="metal-text">DIRECTOR</div> 
+     </div>
+</div> 
+
+<audio id="soundIntro" src="medios/intro.mp3"></audio>
+<audio id="soundType" src="medios/type.mp3"></audio> 
+<audio id="soundClaqueta" src="medios/claqueta.mp3"></audio> 
+<audio id="soundError" src="medios/error.mp3"></audio> 
+<audio id="soundSelect" src="medios/select.mp3"></audio> 
+<audio id="soundEscape" src="medios/escape.mp3"></audio> 
+<audio id="soundRespuesta" src="medios/respuesta.mp3"></audio> 
+<audio id="soundBackground" src="medios/musica1.mp3" loop></audio> 
+
+<!-- AUDIOS DE CUENTA ATRÁS -->
+<audio id="soundSegundo" src="medios/segundo.mp3" preload="auto"></audio>
+<audio id="soundEscapeTimer" src="medios/escape.mp3" preload="auto"></audio>
+
+<script src="medios/datos.js"></script> 
+<script> 
+let state = "prestart"; 
+let gameMode = "video"; 
+let isRandomMode = false; 
+let code = ""; 
+let isUserMuted = false;  
+let photoTimer = null;
+let transitionFired = false;
+let rouletteTimeout = null; 
+
+let rouletteStarted = false;  
+let rouletteFinished = false; 
+let colorRuletaResultado = ""; 
+const ruletaEl = document.getElementById('ruleta');
+const rouletteResultImg = document.getElementById('rouletteResultImg');
+const totalFotogramas = 36; 
+
+// Variables de estado de Cuenta Atrás
+let timeLeft = 45;
+let finalizadoTimer = false;
+let timer = null;
+let sound10Timeout = null;
+const countdownElement = document.getElementById("countdown");
+
+const sectoresColores = [
+    { nombre: "Azul",     fotogramas: [0, 1, 2, 3, 33, 34, 35] },
+    { nombre: "Lila",     fotogramas: [4, 5, 6, 7, 8, 9, 10] },
+    { nombre: "Verde",    fotogramas: [11, 12, 13, 14, 15, 16, 17, 18] },
+    { nombre: "Amarillo", fotogramas: [19, 20, 21, 22, 23, 24, 25] },
+    { nombre: "Rosado",   fotogramas: [26, 27, 28, 29, 30, 31, 32] }
+];
+
+const sounds = { 
+    intro: document.getElementById("soundIntro"),
+    type: document.getElementById("soundType"), 
+    claqueta: document.getElementById("soundClaqueta"), 
+    error: document.getElementById("soundError"), 
+    select: document.getElementById("soundSelect"), 
+    escape: document.getElementById("soundEscape"), 
+    respuesta: document.getElementById("soundRespuesta"), 
+    bg: document.getElementById("soundBackground"),
+    sonidoRuleta: new Audio('medios/ruleta final.mp3'),
+    segundo: document.getElementById("soundSegundo"),
+    escapeTimer: document.getElementById("soundEscapeTimer")
+}; 
+
+const videoPlayer = document.getElementById("videoPlayer"); 
+const audioIndicator = document.getElementById("audioModeIndicator"); 
+const photoContainer = document.getElementById("photoContainer");
+const imgSlide1 = document.getElementById("imgSlide1");
+const imgSlide2 = document.getElementById("imgSlide2");
+const codeDisplay = document.getElementById("codeDisplay"); 
+const instructionText = document.getElementById("instructionText"); 
+const answerBox = document.getElementById("answerBox");
+const startBtnImg = document.getElementById("startBtnImg");
+
+sounds.bg.volume = 0.004; 
+
+function getTechnicolor() {
+    const colors = [
+        'rgba(180, 40, 40, 0.9)',    
+        'rgba(40, 100, 180, 0.9)',   
+        'rgba(160, 130, 20, 0.9)',   
+        'rgba(80, 40, 140, 0.9)',    
+        'rgba(30, 120, 80, 0.9)',    
+        'rgba(200, 90, 30, 0.9)',    
+        'rgba(50, 50, 50, 0.95)'     
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function playSound(s) { if(s) { s.currentTime = 0; s.play().catch(()=>{}); } } 
+
+/* --- FUNCIONES CUENTA ATRÁS --- */
+function playSegundoSound() {
+    playSound(sounds.segundo);
+}
+
+function resetCuentaAtrasVars() {
+    clearInterval(timer);
+    if (sound10Timeout) clearTimeout(sound10Timeout);
+    timer = null;
+    sound10Timeout = null;
+    timeLeft = 45;
+    finalizadoTimer = false;
+    countdownElement.classList.remove('finished-timer');
+    countdownElement.classList.add('active-timer');
+    countdownElement.textContent = "45";
+}
+
+function finalizarCuentaAtras() {
+    if (finalizadoTimer) return;
+    finalizadoTimer = true;
+
+    clearInterval(timer);
+    if (sound10Timeout) clearTimeout(sound10Timeout);
+
+    countdownElement.classList.remove('active-timer');
+    countdownElement.classList.add('finished-timer');
+    countdownElement.textContent = "TIEMPO!!"; 
+
+    playSound(sounds.escapeTimer);
+}
+
+function iniciarContador() {
+    if (timer) return;
+
+    if (sounds.segundo) sounds.segundo.load();
+    if (sounds.escapeTimer) sounds.escapeTimer.load();
+
+    timer = setInterval(() => {
+        timeLeft--;
+        
+        if (timeLeft > 0) {
+            countdownElement.textContent = timeLeft;
+
+            if (timeLeft === 11) {
+                sound10Timeout = setTimeout(() => {
+                    if (!finalizadoTimer) playSegundoSound();
+                }, 1000);
+            }
+
+            if (timeLeft <= 9) {
+                playSegundoSound();
+            }
+        } else {
+            finalizarCuentaAtras();
+        }
+    }, 1000);
+}
+
+function detenerCuentaAtras() {
+    clearInterval(timer);
+    if (sound10Timeout) clearTimeout(sound10Timeout);
+    timer = null;
+    sound10Timeout = null;
+}
+
+function triggerIntroTransition() {
+    if (transitionFired) return;
+    transitionFired = true;
+    
+    startBtnImg.src = "medios/2boton.png";
+    sounds.intro.volume = 1;
+    playSound(sounds.intro);
+    
+    setTimeout(() => {
+        state = "intro";
+        document.getElementById("prestartScreen").style.display = "none";
+        document.getElementById("introScreen").style.display = "flex";
+    }, 350); 
+}
+
+function fadeOutIntro() {
+    const audio = sounds.intro;
+    let fadeInterval = setInterval(() => {
+        if (audio.volume > 0.05) {
+            audio.volume -= 0.05;
+        } else {
+            clearInterval(fadeInterval);
+            audio.pause();
+            audio.volume = 1;
+        }
+    }, 20);
+}
+
+function checkRandomizeMode(currentCode) {
+    if (isRandomMode) {
+        const randomModes = ["video", "photos", "audio", "bso"];
+        let availableModes = randomModes;
+        if (videoDB[currentCode] && !videoDB[currentCode].BSO) {
+            availableModes = ["video", "photos", "audio"];
+        }
+        gameMode = availableModes[Math.floor(Math.random() * availableModes.length)];
+    }
+}
+
+function actualizarPosicionVisual(frame) {
+    const frameNormalizado = Math.floor(frame) % totalFotogramas;
+    ruletaEl.style.backgroundPosition = `${-(frameNormalizado * 80)}vmin 0px`;
+}
+
+function iniciarGiroRuleta() {
+    rouletteStarted = true;
+
+    sounds.sonidoRuleta.currentTime = 0;
+    sounds.sonidoRuleta.play().catch(() => {});
+
+    const duracionGiroRapido = 2500; 
+    const duracionFreno = 3500;      
+    const tiempoTotal = duracionGiroRapido + duracionFreno; 
+
+    const indiceGanador = Math.floor(Math.random() * sectoresColores.length);
+    const colorElegido = sectoresColores[indiceGanador];
+
+    const indiceFotograma = Math.floor(Math.random() * colorElegido.fotogramas.length);
+    const fotogramaDestino = colorElegido.fotogramas[indiceFotograma];
+
+    const velocidadMaxima = 0.08; 
+    const tiempoInicio = performance.now();
+
+    let fotogramaInicioFreno = 0;
+    let inerciasCalculadas = false;
+    let fotogramasTotalesFreno = 0;
+
+    function animar(tiempoActual) {
+        if (state !== "roulette") return;
+
+        const tiempoTranscurrido = tiempoActual - tiempoInicio;
+
+        if (tiempoTranscurrido < duracionGiroRapido) {
+            let frameActual = (tiempoTranscurrido * velocidadMaxima) % totalFotogramas;
+            actualizarPosicionVisual(frameActual);
+            fotogramaInicioFreno = frameActual; 
+            requestAnimationFrame(animar);
+        } 
+        else if (tiempoTranscurrido < tiempoTotal) {
+            if (!inerciasCalculadas) {
+                const posicionActualMod = fotogramaInicioFreno % totalFotogramas;
+                fotogramasTotalesFreno = (totalFotogramas * 3) + (fotogramaDestino - posicionActualMod);
+                if (fotogramasTotalesFreno < totalFotogramas * 3) {
+                    fotogramasTotalesFreno += totalFotogramas;
+                }
+                inerciasCalculadas = true;
+            }
+
+            let tiempoFrenando = tiempoTranscurrido - duracionGiroRapido;
+            let progresoFreno = tiempoFrenando / duracionFreno;
+            let factorSuave = 1 - (1 - progresoFreno) * (1 - progresoFreno);
+            let fotogramasAvanzados = fotogramasTotalesFreno * factorSuave;
+            let frameFinal = fotogramaInicioFreno + fotogramasAvanzados;
+
+            actualizarPosicionVisual(frameFinal);
+            requestAnimationFrame(animar);
+        } 
+        else {
+            actualizarPosicionVisual(fotogramaDestino);
+            sounds.sonidoRuleta.pause();
+            colorRuletaResultado = colorElegido.nombre; 
+            rouletteFinished = true;
+
+            clearTimeout(rouletteTimeout);
+            rouletteTimeout = setTimeout(() => {
+                if (state === "roulette" && rouletteFinished) {
+                    playSound(sounds.select);
+                    goToInputScreen();
+                }
+            }, 500);
+        }
+    }
+    requestAnimationFrame(animar);
+}
+
+document.addEventListener("keydown", (e) => { 
+    if (e.key.toLowerCase() === "m") { isUserMuted = !isUserMuted; sounds.bg.muted = isUserMuted; return; } 
+
+    if (state === "prestart" && e.key === "Enter") {
+        triggerIntroTransition();
+        return;
+    }
+
+    if (state === "intro" && e.key === "Enter") {
+        state = "mode_selection";
+        fadeOutIntro();
+        sounds.bg.play();
+        document.getElementById("introScreen").style.display = "none";
+        document.getElementById("modeScreen").style.display = "flex";
+        return;
+    }
+
+    /* SI ESTAMOS EN LA CUENTA ATRÁS Y SE PULSA ENTER -> VOLVEMOS A LA PANTALLA DE CÓDIGO */
+    if (state === "countdown" && e.key === "Enter") {
+        playSound(sounds.escape);
+        detenerCuentaAtras();
+        if (!isUserMuted) { sounds.bg.muted = false; }
+        resetToInput();
+        return;
+    }
+
+    if (e.key === "Escape") { 
+        if (state === "mode_selection" || state === "intro" || state === "prestart") return; 
+        playSound(sounds.escape); 
+        clearTimeout(photoTimer);
+        clearTimeout(rouletteTimeout); 
+        sounds.sonidoRuleta.pause();
+        
+        if (state === "countdown") {
+            detenerCuentaAtras();
+            if (!isUserMuted) { sounds.bg.muted = false; }
+            resetToInput();
+            return;
+        }
+
+        if (state === "video" || state === "waiting") {
+            if (!isUserMuted) { sounds.bg.muted = false; }
+        }
+
+        if (state === "roulette") {
+            resetToModeSelection();
+        } else if (state === "input") {
+            loadRoulette();
+        } else {
+            resetToInput();
+        }
+        return; 
+    } 
+
+    if (state === "mode_selection") { 
+        if (e.key === "1" || e.key === "2" || e.key === "3" || e.key === "4" || e.key === "5") { 
+            if (e.key === "5") {
+                isRandomMode = true;
+                const randomModes = ["video", "photos", "audio", "bso"];
+                let availableModes = randomModes;
+                gameMode = availableModes[Math.floor(Math.random() * availableModes.length)];
+            } else {
+                isRandomMode = false; 
+                const modes = { "1": "video", "2": "photos", "3": "audio", "4": "bso" };
+                gameMode = modes[e.key];
+            }
+            
+            playSound(sounds.select); 
+            loadRoulette(); 
+        } 
+    } else if (state === "roulette") {
+        if (e.key === "Enter") {
+            if (!rouletteStarted) {
+                iniciarGiroRuleta();
+            } else if (rouletteFinished) {
+                clearTimeout(rouletteTimeout); 
+                playSound(sounds.select);
+                goToInputScreen();
+            }
+        }
+    } else if (state === "input") { 
+        /* ACTIVACIÓN DE LA CUENTA ATRÁS CON LA TECLA '*' (MANTENIENDO MÚSICA DE FONDO) */
+        if (e.key === "*") {
+            state = "countdown";
+            document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+            document.getElementById("countdownScreen").style.display = "flex";
+            resetCuentaAtrasVars();
+            iniciarContador();
+            return;
+        }
+
+        if (e.key >= "0" && e.key <= "9" && code.length < 3) { 
+            code += e.key; 
+            playSound(sounds.type); 
+            updateDisplay(true); 
+        } else if (e.key === "Backspace") { 
+            code = code.slice(0, -1); 
+            playSound(sounds.type); 
+            updateDisplay(); 
+        } else if (e.key === "Enter") { 
+            if (code.length > 0 && videoDB[code]) {
+                checkRandomizeMode(code);
+
+                if (gameMode === "bso" && !videoDB[code].BSO) {
+                    triggerError();
+                } else {
+                    handleStartSequence(); 
+                }
+            } else {
+                triggerError(); 
+            }
+        } 
+    } else if (state === "black" && e.key === "Enter") { 
+        playSound(sounds.respuesta); 
+        showTitle(); 
+    } else if (state === "title" && e.key === "Enter") { 
+        playSound(sounds.select); 
+        code = "";
+        loadRoulette(); 
+    } else if (state === "video" && e.key === "Enter") { 
+        stopCurrentMedia();
+    } 
+}); 
+
+function loadRoulette() {
+    state = "roulette";
+    rouletteStarted = false;
+    rouletteFinished = false; 
+    colorRuletaResultado = ""; 
+    clearTimeout(rouletteTimeout); 
+    actualizarPosicionVisual(0);
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none"); 
+    document.getElementById("rouletteScreen").style.display = "flex";
+}
+
+function goToInputScreen() {
+    state = "input";
+    
+    rouletteResultImg.src = "";
+    rouletteResultImg.style.display = "none";
+
+    if (colorRuletaResultado === "Azul") {
+        rouletteResultImg.src = "medios/2años.png";
+        rouletteResultImg.style.display = "block";
+    } else if (colorRuletaResultado === "Amarillo") {
+        rouletteResultImg.src = "medios/4años.png";
+        rouletteResultImg.style.display = "block";
+    } else if (colorRuletaResultado === "Rosado") {
+        rouletteResultImg.src = "medios/2000s.png";
+        rouletteResultImg.style.display = "block";
+    } else if (colorRuletaResultado === "Lila") {
+        rouletteResultImg.src = "medios/decada.png";
+        rouletteResultImg.style.display = "block";
+    } else if (colorRuletaResultado === "Verde") {
+        rouletteResultImg.src = "medios/director.png";
+        rouletteResultImg.style.display = "block";
+    }
+
+    const mainScr = document.getElementById("mainScreen");
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none"); 
+    mainScr.style.display = "flex"; 
+    mainScr.classList.remove("zoom-in-screen");
+    void mainScr.offsetWidth; 
+    mainScr.classList.add("zoom-in-screen");
+    updateDisplay(); 
+}
+
+function updateDisplay(isNewNumber = false) { 
+    codeDisplay.innerHTML = ""; 
+    for (let i = 0; i < 3; i++) { 
+        const box = document.createElement("div"); 
+        box.className = "num-box"; 
+        const charToShow = i < code.length ? code[i] : '_';
+        box.innerHTML = `<b class="metal-text">${charToShow}</b>`; 
+        if (isNewNumber && i === code.length - 1) { box.classList.add("pop"); }
+        codeDisplay.appendChild(box); 
+    } 
+} 
+
+function handleStartSequence() { 
+    state = "waiting"; 
+    if (gameMode !== "photos") { sounds.bg.muted = true; }
+    playSound(sounds.claqueta); 
+    sounds.claqueta.onended = () => { if (state === "waiting") startMedia(videoDB[code]); }; 
+} 
+
+function startMedia(data) { 
+    state = "video"; 
+    document.getElementById("mainScreen").style.display = "none"; 
+    document.getElementById("videoScreen").style.display = "flex"; 
+    
+    // Restaurar propiedades visuales por defecto
+    videoPlayer.style.position = "absolute";
+    videoPlayer.style.left = "";
+    videoPlayer.style.opacity = 1;
+    videoPlayer.style.display = "none"; 
+    
+    audioIndicator.style.display = "none"; 
+    photoContainer.style.display = "none";
+    photoContainer.classList.remove("fade-in-container", "fade-out-container");
+    imgSlide1.classList.remove("active"); imgSlide2.classList.remove("active");
+
+    if (gameMode === "video") {
+        videoPlayer.style.display = "block";
+        videoPlayer.src = "videos/" + data.src; videoPlayer.play();
+        videoPlayer.ontimeupdate = () => { if (videoPlayer.duration - videoPlayer.currentTime < 0.5) stopCurrentMedia(); };
+    } 
+    else if (gameMode === "photos") {
+        photoContainer.style.display = "block"; photoContainer.classList.add("fade-in-container");
+        const baseName = data.src.split('.')[0]; 
+        imgSlide1.src = `videos/${baseName}-img1.jpg`; imgSlide2.src = `videos/${baseName}-img2.jpg`;
+        imgSlide1.classList.add("active");
+         
+        photoTimer = setTimeout(() => {
+            imgSlide1.classList.remove("active"); 
+            imgSlide2.classList.add("active");
+             
+            photoTimer = setTimeout(() => {
+                photoContainer.classList.add("fade-out-container");
+                setTimeout(() => { stopCurrentMedia(); }, 1500); 
+            }, 12000); 
+        }, 12000);
+    } 
+    else if (gameMode === "audio") {
+        audioIndicator.textContent = "🔊";
+        audioIndicator.style.display = "block"; 
+        
+        videoPlayer.style.display = "block"; 
+        videoPlayer.style.left = "-9999px"; 
+        
+        videoPlayer.src = "videos/" + data.src;
+        videoPlayer.play();
+        videoPlayer.ontimeupdate = () => { if (videoPlayer.duration - videoPlayer.currentTime < 0.5) stopCurrentMedia(); };
+    }
+    else if (gameMode === "bso") {
+        audioIndicator.textContent = "🎵";
+        audioIndicator.style.display = "block"; 
+        
+        videoPlayer.style.display = "block"; 
+        videoPlayer.style.left = "-9999px"; 
+        
+        videoPlayer.src = "bso/" + (data.BSCO || data.BSO); 
+        videoPlayer.play();
+        videoPlayer.ontimeupdate = () => { if (videoPlayer.duration - videoPlayer.currentTime < 0.5) stopCurrentMedia(); };
+    }
+} 
+
+function stopCurrentMedia() { 
+    clearTimeout(photoTimer); 
+    videoPlayer.pause(); 
+    state = "black"; 
+     
+    playSound(sounds.escape); 
+
+    if (!isUserMuted) { sounds.bg.muted = false; }
+    document.getElementById("videoScreen").style.display = "none"; 
+    document.getElementById("blackScreen").style.display = "flex"; 
+} 
+
+function showTitle() { 
+    state = "title"; 
+    const m = videoDB[code]; 
+    answerBox.style.backgroundColor = getTechnicolor(); 
+    document.getElementById("blackScreen").style.display = "none"; 
+    document.getElementById("titleScreen").style.display = "flex"; 
+    document.getElementById("videoTitle").textContent = m.title; 
+    document.getElementById("videoYear").textContent = m.year; 
+    document.getElementById("videoDirector").textContent = m.director; 
+} 
+
+function resetToInput() { 
+    state = "input"; 
+    code = ""; 
+    detenerCuentaAtras();
+    videoPlayer.pause(); 
+    if (!isUserMuted) { sounds.bg.muted = false; } 
+    videoPlayer.src = ""; 
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none"); 
+    document.getElementById("mainScreen").style.display = "flex"; 
+    updateDisplay(); 
+} 
+
+function resetToModeSelection() { 
+    state = "mode_selection"; 
+    code = ""; 
+    isRandomMode = false; 
+    detenerCuentaAtras();
+    if (!isUserMuted) { sounds.bg.muted = false; } 
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none"); 
+    document.getElementById("modeScreen").style.display = "flex"; 
+} 
+
+function triggerError() { 
+    playSound(sounds.error); 
+    instructionText.style.visibility = "hidden"; 
+    rouletteResultImg.style.display = "none"; 
+    codeDisplay.innerHTML = '<span class="error-msg">CÓDIGO ERRÓNEO</span>'; 
+    
+    setTimeout(() => { 
+        code = ""; 
+        updateDisplay(); 
+        instructionText.style.visibility = "visible"; 
+        if (rouletteResultImg.src && !rouletteResultImg.src.endsWith('/')) {
+            rouletteResultImg.style.display = "block"; 
+        }
+    }, 800); 
+} 
+</script> 
+</body> 
+</html>
