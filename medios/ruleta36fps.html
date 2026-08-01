@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruleta Círculo Perfecto con Sonido</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background-color: #000; 
+            perspective: 1000px; 
+        }
+
+        /* CAPA DEL FONDO (Efecto Cortina Animada) */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -5%;
+            left: -5%;
+            width: 110%;
+            height: 110%;
+            z-index: -1; 
+            background-image: url('fondo.jpg'); 
+            background-size: cover;             
+            background-position: center;        
+            background-repeat: no-repeat;       
+            animation: brisaCortina 8s ease-in-out infinite alternate;
+        }
+
+        /* CONTENEDOR MAESTRO: Mantiene la posición fija y el círculo perfecto en el centro */
+        .ruleta-container {
+            width: 80vmin;
+            height: 80vmin; 
+            aspect-ratio: 1 / 1; 
+            overflow: hidden;
+            position: relative;
+            border-radius: 50%; 
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6); 
+            background-color: transparent; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: zoomSuave 1.5s ease-out forwards;
+        }
+
+        /* EL SPRITE */
+        .sprite-ruleta {
+            position: absolute;
+            width: 2880vmin; 
+            height: 100%;
+            background-image: url('tu-sprite-sheet-36.png'); 
+            background-size: auto 100%; 
+            background-repeat: no-repeat;
+            background-position: 0vmin 0px;
+            left: 0; 
+            will-change: background-position; 
+        }
+
+        /* Contenedor para el texto del resultado en pantalla */
+        .resultado-texto {
+            margin-top: 4vh;
+            font-size: 4vmin;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0px 4px 10px rgba(0, 0, 0, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            min-height: 5vmin; 
+            transition: opacity 0.3s ease;
+            opacity: 0; 
+        }
+
+        /* Animación para simular la brisa suave en la cortina */
+        @keyframes brisaCortina {
+            0% { transform: scale(1) rotateX(0deg) rotateY(0deg); }
+            50% { transform: scale(1.02) rotateX(1deg) rotateY(0.5deg); }
+            100% { transform: scale(1.01) rotateX(-0.5deg) rotateY(-1deg); }
+        }
+
+        /* Definición de la animación de zoom in */
+        @keyframes zoomSuave {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ruleta-container">
+        <div id="ruleta" class="sprite-ruleta"></div>
+    </div>
+
+    <div id="resultado" class="resultado-texto">Resultado: -</div>
+
+    <script>
+        const ruleta = document.getElementById('ruleta');
+        const resultadoDiv = document.getElementById('resultado');
+        const totalFotogramas = 36; 
+
+        // CONFIGURACIÓN EXACTA DE TUS COLORES
+        const sectoresColores = [
+            { nombre: "Azul",     fotogramas: [0, 1, 2, 3, 33, 34, 35] },
+            { nombre: "Violeta",  fotogramas: [4, 5, 6, 7, 8, 9, 10] },
+            { nombre: "Verde",    fotogramas: [11, 12, 13, 14, 15, 16, 17, 18] },
+            { nombre: "Amarillo", fotogramas: [19, 20, 21, 22, 23, 24, 25] },
+            { nombre: "Rosado",   fotogramas: [26, 27, 28, 29, 30, 31, 32] }
+        ];
+
+        let estaGirando = false; 
+
+        // CONFIGURACIÓN DEL AUDIO
+        const sonidoRuleta = new Audio('ruleta final.mp3'); 
+
+        function actualizarPosicionVisual(frame) {
+            const frameNormalizado = Math.floor(frame) % totalFotogramas;
+            ruleta.style.backgroundPosition = `${-(frameNormalizado * 80)}vmin 0px`;
+        }
+
+        function girar() {
+            if (estaGirando) return;
+            estaGirando = true;
+
+            // Ocultamos el resultado anterior al empezar un nuevo giro
+            resultadoDiv.style.opacity = "0";
+
+            // CONTROL DE AUDIO SEGURO: 
+            // Usamos .catch() para que si el navegador bloquea el audio, la ruleta gire IGUALMENTE sin romperse
+            sonidoRuleta.currentTime = 0;
+            sonidoRuleta.play().catch(error => {
+                console.log("El navegador bloqueó el audio temporalmente hasta que hagas un clic físico:", error);
+            });
+
+            // CONFIGURACIÓN DE TIEMPOS (Total: 6000ms = 6 segundos)
+            const duracionGiroRapido = 2500; 
+            const duracionFreno = 3500;      
+            const tiempoTotal = duracionGiroRapido + duracionFreno; 
+
+            // 1. Elegimos qué color va a ganar al azar
+            const indiceGanador = Math.floor(Math.random() * sectoresColores.length);
+            const colorElegido = sectoresColores[indiceGanador];
+
+            // 2. Elegimos al azar uno de los fotogramas válidos de ese color
+            const indiceFotograma = Math.floor(Math.random() * colorElegido.fotogramas.length);
+            const fotogramaDestino = colorElegido.fotogramas[indiceFotograma];
+
+            // Velocidad constante del giro rápido
+            const velocidadMaxima = 0.08; 
+
+            // Cronómetro de alta precisión del navegador
+            const tiempoInicio = performance.now();
+
+            let fotogramaInicioFreno = 0;
+            let inerciasCalculadas = false;
+            let fotogramasTotalesFreno = 0;
+
+            function animarRuleta(tiempoActual) {
+                const tiempoTranscurrido = tiempoActual - tiempoInicio;
+
+                // FASE 1: GIRO RÁPIDO UNIFORME (0 a 2.5 segundos)
+                if (tiempoTranscurrido < duracionGiroRapido) {
+                    let frameActual = (tiempoTranscurrido * velocidadMaxima) % totalFotogramas;
+                    actualizarPosicionVisual(frameActual);
+                    fotogramaInicioFreno = frameActual; 
+                    requestAnimationFrame(animarRuleta);
+                } 
+                // FASE 2: FRENADO DE FRICCIÓN REAL PROGRESIVO (2.5 a 6.0 segundos)
+                else if (tiempoTranscurrido < tiempoTotal) {
+                    if (!inerciasCalculadas) {
+                        const posicionActualMod = fotogramaInicioFreno % totalFotogramas;
+                        fotogramasTotalesFreno = (totalFotogramas * 3) + (fotogramaDestino - posicionActualMod);
+                        if (fotogramasTotalesFreno < totalFotogramas * 3) {
+                            fotogramasTotalesFreno += totalFotogramas;
+                        }
+                        inerciasCalculadas = true;
+                    }
+
+                    let tiempoFrenando = tiempoTranscurrido - duracionGiroRapido;
+                    let progresoFreno = tiempoFrenando / duracionFreno;
+                    let factorSuave = 1 - (1 - progresoFreno) * (1 - progresoFreno);
+                    let fotogramasAvanzados = fotogramasTotalesFreno * factorSuave;
+                    let frameFinal = fotogramaInicioFreno + fotogramasAvanzados;
+
+                    actualizarPosicionVisual(frameFinal);
+                    requestAnimationFrame(animarRuleta);
+                } 
+                // FASE 3: PARADA ABSOLUTA CLAVADA (6.0 segundos exactos)
+                else {
+                    actualizarPosicionVisual(fotogramaDestino);
+                    sonidoRuleta.pause();
+
+                    // Escribimos el nombre del color en pantalla
+                    resultadoDiv.innerText = "Resultado: " + colorElegido.nombre;
+                    resultadoDiv.style.opacity = "1";
+                    
+                    estaGirando = false; 
+                }
+            }
+
+            requestAnimationFrame(animarRuleta);
+        }
+
+        // CAPTURA DE LA TECLA ENTER
+        document.addEventListener('keydown', function(evento) {
+            if (evento.key === 'Enter') {
+                evento.preventDefault(); 
+                
+                // Truco de desbloqueo mutuo: al pulsar Enter intentamos cargar el audio para "engañar" al navegador
+                if (sonidoRuleta.paused && !estaGirando) {
+                    sonidoRuleta.load();
+                }
+                
+                girar();
+            }
+        });
+    </script>
+</body>
+</html>
