@@ -1,0 +1,1624 @@
+<!DOCTYPE html> 
+<html lang="es"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <title>MOOVI</title> 
+    <style> 
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial Black', 'Gadget', sans-serif; } 
+        body { background: black; overflow: hidden; width: 100vw; height: 100vh; } 
+
+        :root {
+             --v-width-pct: 82.5%;    
+             --v-height-pct: 86%;     
+             --v-radius: 10px; 
+        }
+
+        /* --- FUNDIDO INICIAL --- */
+        #blackout {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: black;
+            z-index: 999;
+            pointer-events: none;
+            animation: fadeToTrans 3s forwards;
+        }
+
+        @keyframes fadeToTrans {
+            0% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+
+        /* --- FONDO ANIMADO --- */ 
+        .curtain-bg { 
+             position: absolute; 
+             top: 0; left: 0; width: 100%; height: 100%; 
+             background: url('medios/fondo.jpg') center/cover no-repeat; 
+             z-index: 1; 
+             animation: curtainSway 8s ease-in-out infinite alternate; 
+             transform-origin: top center; 
+        } 
+        .curtain-overlay { 
+             position: absolute; 
+             top: 0; left: 0; width: 100%; height: 100%; 
+             background: linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(255,255,255,0.05) 25%, rgba(0,0,0,0.2) 50%, rgba(255,255,255,0.05) 75%, rgba(0,0,0,0.2) 100%); 
+             background-size: 200% 100%; 
+             animation: shadowMove 12s linear infinite; 
+             pointer-events: none; 
+             z-index: 2; 
+        } 
+
+        @keyframes curtainSway { 
+             0% { transform: scale(1.0) skewX(0deg); filter: brightness(1); } 
+             50% { transform: scale(1.02) skewX(1deg); filter: brightness(1.1); } 
+             100% { transform: scale(1.01) skewX(-1deg); filter: brightness(0.95); } 
+        } 
+        @keyframes shadowMove { 0% { background-position: 0% 0%; } 100% { background-position: 200% 0%; } } 
+
+        /* --- ANIMACIONES --- */ 
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes zoomOutEffect { from { transform: scale(1.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes pulseIndicator { 0% { transform: scale(1); opacity: 0.9; filter: drop-shadow(0 0 10px rgba(255,255,255,0.4)); } 50% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 35px rgba(255,255,255,0.9)); } 100% { transform: scale(1); opacity: 0.9; filter: drop-shadow(0 0 10px rgba(255,255,255,0.4)); } } 
+         
+        @keyframes popNumber {
+            0% { transform: scale(1); box-shadow: 0 0 0px rgba(255,255,255,0); border-color: #ddd; }
+            50% { transform: scale(1.15); box-shadow: 0 0 30px rgba(255,255,255,0.8); border-color: #fff; }
+            100% { transform: scale(1); box-shadow: 0 0 0px rgba(255,255,255,0); border-color: #ddd; }
+        }
+
+        .pop { animation: popNumber 0.5s ease-out; }
+        .pop-loop { animation: popNumber 3s infinite ease-in-out; }
+        .zoom-in-screen { animation: zoomOutEffect 0.8s ease-out forwards; }
+
+        .screen { position: absolute; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 10; } 
+         
+        .metal-text {  
+             text-transform: uppercase;  
+             background: linear-gradient(to bottom, #ffffff 0%, #eeeeee 100%);  
+             -webkit-background-clip: text;  
+             -webkit-text-fill-color: transparent;  
+             filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));  
+             text-shadow: 0px 1px 0px #cccccc, 0px 2px 0px #bbbbbb, 0px 3px 0px #aaaaaa, 0px 4px 15px rgba(0,0,0,0.7);  
+        } 
+
+        /* --- PRE-START SCREEN --- */
+        #prestartScreen { 
+            background: black; 
+            z-index: 30; 
+            gap: 3vh; 
+            transition: opacity 0.6s ease-in-out;
+            opacity: 1;
+            cursor: pointer;
+        }
+        #prestartScreen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #startBtnImg { width: 10vw; max-width: 250px; cursor: pointer; user-select: none; -webkit-user-drag: none; }
+        .prestart-text { font-size: 1.3vw; letter-spacing: 0.4vw; animation: pulseIndicator 3s infinite ease-in-out; cursor: pointer; }
+
+        /* --- COLUMBIA INTRO VIDEO SCREEN --- */
+        #columbiaScreen {
+            background: black;
+            z-index: 25;
+            cursor: pointer;
+        }
+        #columbiaVideo {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+        }
+
+        /* --- PORTADA --- */
+        #introScreen { z-index: 20; background: black; cursor: pointer; }
+        .intro-bg {
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            background: url('medios/portada.png') center/cover;
+            z-index: 3;
+        }
+        .intro-ui { 
+            position: relative; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            animation: zoomOutEffect 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; 
+            z-index: 5;
+        }
+        .logo-box { 
+            background: rgba(255, 255, 255, 0.1); 
+            border: 4px solid #ddd; 
+            border-radius: 20px; 
+            padding: 25px 50px; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+            margin-top: -15vh; 
+            transition: opacity 2s ease-in-out, filter 2s ease-in-out, transform 2s ease-in-out;
+            opacity: 1;
+            filter: blur(0px);
+            transform: scale(1);
+            will-change: opacity, filter, transform;
+            z-index: 5;
+        }
+        .logo-box.dissolve-out {
+            opacity: 0;
+            filter: blur(8px);
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        #introAlphaVideo {
+            position: absolute;
+            top: 43%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            height: 54%;
+            object-fit: contain;
+            pointer-events: none;
+            display: none;
+            opacity: 0;
+            transition: opacity 3s ease-in-out;
+            will-change: opacity;
+            z-index: 4;
+            background: transparent;
+        }
+        #introAlphaVideo.fade-in {
+            opacity: 1;
+        }
+
+        .start-prompt { position: absolute; bottom: 18vh; font-size: 1.4vw; letter-spacing: 0.5vw; animation: pulseIndicator 4s infinite ease-in-out; z-index: 6; }
+        .copyright-text { position: absolute; bottom: 10vh; width: 100%; font-size: 1.0vw; color: rgba(255,255,255,0.4); letter-spacing: 0.1vw; text-align: center; font-weight: normal; z-index: 6; }
+
+        /* --- SELECCIÓN DE OPCIONES (Tipo, Modo y Jugadores) --- */
+        .mode-option { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-size: 2.2vw; 
+            display: flex; 
+            align-items: center; 
+            font-weight: bold;
+            letter-spacing: 0.1vw;
+            cursor: pointer;
+        }
+        .mode-num { 
+            width:65px; 
+            height:60px; 
+            margin-right:25px; 
+            border-radius: 10px; 
+            border: 2px solid #ddd; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: rgba(255,255,255,0.1); 
+            font-family: 'Arial Black', sans-serif; 
+        }
+
+        /* --- PANTALLA DE RULETA INTEGRADA --- */
+        #rouletteScreen { 
+            z-index: 15; 
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .ruleta-container {
+            width: 80vmin;
+            height: 80vmin; 
+            aspect-ratio: 1 / 1; 
+            overflow: hidden;
+            position: relative;
+            border-radius: 50%; 
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6); 
+            background-color: transparent; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: zoomSuave 1.5s ease-out forwards;
+        }
+        .sprite-ruleta {
+            position: absolute;
+            width: 2880vmin; 
+            height: 100%;
+            background-image: url('medios/tu-sprite-sheet-36.png'); 
+            background-size: auto 100%; 
+            background-repeat: no-repeat;
+            background-position: 0vmin 0px;
+            left: 0; 
+            will-change: background-position; 
+        }
+        @keyframes zoomSuave {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- INPUT --- */
+        #mainScreen { flex-direction: column; justify-content: flex-start; padding-top: 10vh; position: relative; }
+        
+        #rouletteResultImg { 
+            width: 22vw; 
+            max-width: 360px; 
+            height: auto; 
+            margin: 2vh 0; 
+            display: none; 
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); 
+        }
+        
+        #codeDisplay { display: flex; gap: 2vw; min-height: 18vw; align-items: center; justify-content: center; margin-top: 2vh; } 
+        .num-box { 
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 12px; 
+            border: 2px solid #dddddd; 
+            display: inline-flex; 
+            justify-content: center; 
+            align-items: center; 
+            width: 12vw; 
+            height: 18vw; 
+            transition: all 0.2s;
+        } 
+        .num-box b { font-size: 12vw; }
+        .sub-text { font-size: 1.8vw; color: #000; text-transform: uppercase; letter-spacing: 0.2vw; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 8px rgba(255,255,255,0.8); text-align: center; max-width: 80%; } 
+        
+        .mimica-title {
+            font-size: 11vw;
+            letter-spacing: 0.8vw;
+            line-height: 18vw;
+            margin-top: 2vh;
+            animation: pulseIndicator 3s infinite ease-in-out;
+            cursor: pointer;
+        }
+
+        .error-msg { 
+            font-size: 9vw; 
+            color: #ff0000; 
+            font-weight: 900; 
+            letter-spacing: -0.2vw; 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vw;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* --- ESTILOS DE LA CUENTA ATRÁS INTEGRADA --- */
+        #countdownScreen {
+            z-index: 60;
+            cursor: pointer;
+        }
+
+        #countdown {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-weight: 900;
+            color: #ffffff;
+            text-align: center;
+            line-height: 1;
+            user-select: none;
+            z-index: 10;
+        }
+
+        .active-timer {
+            font-size: 300px;
+            animation: pulseTimer 2s infinite ease-in-out;
+        }
+
+        .finished-timer {
+            font-size: 180px;
+            text-shadow: 
+                0 6px 16px rgba(0, 0, 0, 1),
+                0 0 35px rgba(255, 255, 255, 0.75), 
+                0 0 50px rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .active-timer { font-size: 140px; }
+            .finished-timer { font-size: 90px; }
+        }
+
+        @keyframes pulseTimer {
+            0%, 100% {
+                transform: scale(0.97);
+                text-shadow: 0 4px 10px rgba(0, 0, 0, 0.95), 0 0 20px rgba(255, 255, 255, 0.45);
+            }
+            50% {
+                transform: scale(1.03);
+                text-shadow: 0 8px 20px rgba(0, 0, 0, 1), 0 0 35px rgba(255, 255, 255, 0.75), 0 0 50px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        /* --- VIDEO Y CELULOIDE --- */
+        #videoScreen { background: black; z-index: 50; cursor: pointer; } 
+        .celuloide-frame { position: relative; height: 100vh; aspect-ratio: 16 / 9; display: flex; justify-content: center; align-items: center; }
+        .celuloide-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('medios/celuloide.png') center/contain no-repeat; z-index: 52; pointer-events: none; }
+        
+        #videoPlayer { position: absolute; width: var(--v-width-pct); height: var(--v-height-pct); object-fit: cover; z-index: 51; border-radius: var(--v-radius); transition: opacity 1.5s ease; }  
+         
+        /* --- CORRECCIÓN HALO ALTAVOZ / NOTA --- */
+        #audioModeIndicator { position: absolute; z-index: 53; display: none; font-size: 18vw; color: #ddd; animation: pulseIndicator 3s infinite ease-in-out; }
+         
+        /* --- AJUSTES DE FOTOGRAMAS --- */
+        .photo-container { position: absolute; width: var(--v-width-pct); height: var(--v-height-pct); z-index: 51; border-radius: var(--v-radius); overflow: hidden; display: none; background: #000; }
+        .photo-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 3.5s ease-in-out; } 
+        .photo-slide.active { opacity: 1; }
+        .fade-in-container { animation: fadeIn 1.5s ease forwards; }
+        .fade-out-container { animation: fadeOut 1.5s ease forwards; } 
+
+        /* --- RESPUESTA --- */
+        #blackScreen { cursor: pointer; }
+        #titleScreen { cursor: pointer; }
+        .answer-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('medios/respuesta.jpg') center/cover no-repeat; z-index: 5; }
+        .answer-box { 
+            position: relative; 
+            border: 4px solid rgba(255,255,255,0.7); 
+            border-radius: 25px; 
+            padding: 4vh 6vw; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 1.5vh; 
+            box-shadow: 0 0 60px rgba(0,0,0,0.9), inset 0 0 20px rgba(255,255,255,0.1); 
+            max-width: 85vw; 
+            z-index: 10; 
+            animation: zoomOutEffect 0.7s ease-out; 
+        }
+        #videoTitle { font-size: 4.2vw; letter-spacing: 0.1vw; }
+        #videoYear { font-size: 11vw; line-height: 1; margin: 1vh 0; }
+        #videoDirector { font-size: 2.8vw; letter-spacing: 0.2vw; }
+
+        /* --- PANTALLA HITSTER --- */
+        #hitsterScreen {
+            z-index: 18;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 3vh;
+            cursor: pointer;
+        }
+        
+        #hitsterImg {
+            width: 22vw;
+            max-width: 360px;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+        }
+
+        /* --- TECLADO NUMÉRICO FLOTANTE (MÁS GRANDE Y CENTRADO A LA DERECHA) --- */
+        #onScreenKeypad {
+            position: fixed;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            padding: 10px;
+            display: none;
+            grid-template-columns: repeat(3, 55px);
+            gap: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.9);
+            backdrop-filter: blur(6px);
+        }
+
+        .keypad-btn {
+            width: 55px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .keypad-btn.empty-btn {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+
+        .keypad-btn:active:not(.empty-btn) {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+
+        .keypad-btn.asterisk-btn {
+            font-size: 26px;
+            line-height: 0;
+            padding-top: 8px;
+        }
+
+        .keypad-btn.enter-btn {
+            background: rgba(40, 160, 40, 0.6);
+            border-color: rgba(60, 200, 60, 0.8);
+            font-size: 11px;
+        }
+
+        .keypad-btn.del-btn {
+            background: rgba(180, 40, 40, 0.6);
+            border-color: rgba(220, 60, 60, 0.8);
+            font-size: 11px;
+        }
+
+        .keypad-btn.esc-btn {
+            background: rgba(200, 120, 20, 0.6);
+            border-color: rgba(240, 150, 40, 0.8);
+            font-size: 11px;
+        }
+    </style> 
+</head> 
+<body> 
+
+<div id="blackout"></div>
+
+<!-- TECLADO FLOTANTE CON LA DISTRIBUCIÓN DE LA IMAGEN -->
+<div id="onScreenKeypad">
+    <div class="keypad-btn" onclick="sendVirtualKey('1')">1</div>
+    <div class="keypad-btn" onclick="sendVirtualKey('2')">2</div>
+    <div class="keypad-btn" onclick="sendVirtualKey('3')">3</div>
+    <div class="keypad-btn" onclick="sendVirtualKey('4')">4</div>
+    <div class="keypad-btn" onclick="sendVirtualKey('5')">5</div>
+    <div class="keypad-btn" onclick="sendVirtualKey('6')">6</div>
+    <div class="keypad-btn" onclick="sendVirtualKey('7')">7</div>
+    <div class="keypad-btn" onclick="sendVirtualKey('8')">8</div>
+    <div class="keypad-btn" onclick="sendVirtualKey('9')">9</div>
+    <div class="keypad-btn empty-btn"></div>
+    <div class="keypad-btn" onclick="sendVirtualKey('0')">0</div>
+    <div class="keypad-btn asterisk-btn" onclick="sendVirtualKey('*')">*</div>
+    <div class="keypad-btn esc-btn" onclick="sendVirtualKey('Escape')">ESC</div>
+    <div class="keypad-btn enter-btn" onclick="sendVirtualKey('Enter')">ENTER</div>
+    <div class="keypad-btn del-btn" onclick="sendVirtualKey('Backspace')">DEL</div>
+</div>
+
+<!-- PANTALLA INICIAL (BOTÓN) -->
+<div id="prestartScreen" class="screen" onclick="triggerStartSequence()">
+     <img id="startBtnImg" src="medios/1boton.png" alt="Iniciar" onmousedown="triggerStartSequence()">
+     <div class="metal-text prestart-text" onmousedown="triggerStartSequence()">INICIAR</div>
+</div>
+
+<!-- PANTALLA VÍDEO COLUMBIA -->
+<div id="columbiaScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('columbia')">
+    <video id="columbiaVideo" playsinline>
+        <source src="medios/columbia_intro.mp4" type="video/mp4">
+    </video>
+</div>
+
+<!-- PANTALLA INTRO CON CANCIÓN Y VÍDEO MP4 -->
+<div id="introScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('intro')">
+     <div class="intro-bg"></div>
+     <div class="intro-ui">
+         <div id="logoBox" class="logo-box"><div class="metal-text" style="font-size:12vw; line-height:1;">MOOVI</div></div>
+         
+         <!-- VÍDEO MP4 -->
+         <video id="introAlphaVideo" playsinline muted>
+             <source src="medios/intro_videos.mp4" type="video/mp4">
+         </video>
+
+         <div class="metal-text start-prompt">PULSA ENTER PARA INICIAR JUEGO</div>
+         <div class="copyright-text">2026 © all rights reserved</div>
+     </div>
+</div>
+
+<div class="curtain-bg" style="display:none;"></div> 
+<div class="curtain-overlay" style="display:none;"></div> 
+
+<!-- SELECCIÓN TIPO DE JUEGO -->
+<div id="gameTypeScreen" class="screen" style="display:none;"> 
+     <div class="metal-text" style="font-size: 4vw; margin-bottom: 5vh; letter-spacing: 0.6vw; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px;">TIPO DE JUEGO</div> 
+     <div style="display: flex; flex-direction: column; gap: 4vh;"> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('1')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">1</b></div> MOOVI</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('2')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">2</b></div> MOOVI + HITSTER</div> 
+     </div> 
+</div>
+
+<!-- SELECCIÓN NÚMERO DE JUGADORES -->
+<div id="playersScreen" class="screen" style="display:none;"> 
+     <div class="metal-text" style="font-size: 4vw; margin-bottom: 5vh; letter-spacing: 0.6vw; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px;">Numero de jugadores</div> 
+     <div style="display: flex; flex-direction: column; gap: 4vh;"> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('2')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">2</b></div> 2 JUGADORES</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('3')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">3</b></div> 3 JUGADORES</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('4')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">4</b></div> 4 JUGADORES</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('5')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">5</b></div> 5 JUGADORES</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('6')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">6</b></div> 6 JUGADORES</div> 
+     </div> 
+</div>
+
+<!-- SELECCIÓN DE MODO -->
+<div id="modeScreen" class="screen" style="display:none;"> 
+     <div class="metal-text" style="font-size: 4vw; margin-bottom: 5vh; letter-spacing: 0.6vw; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px;">MODOS DE JUEGO</div> 
+     <div style="display: flex; flex-direction: column; gap: 4vh;"> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('1')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">1</b></div> FÁCIL ( AUDIO + VIDEO )</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('2')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">2</b></div> INTERMEDIO ( FOTOGRAMAS )</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('3')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">3</b></div> DIFÍCIL ( SOLO AUDIO )</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('4')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">4</b></div> EXPERTO ( BANDA SONORA )</div> 
+         <div class="metal-text mode-option" onclick="sendVirtualKey('5')"><div class="mode-num pop-loop"><b class="metal-text" style="font-size:2.2vw;">5</b></div> ALEATORIO</div> 
+     </div> 
+</div> 
+
+<div id="rouletteScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('roulette')">
+    <div class="ruleta-container">
+        <div id="ruleta" class="sprite-ruleta"></div>
+    </div>
+</div>
+
+<!-- PANTALLA HITSTER -->
+<div id="hitsterScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('hitster')">
+    <img id="hitsterImg" src="" alt="Resultado Categoría">
+    <div class="metal-text mimica-title" style="margin-top: 0; line-height: 1;">HITSTER</div>
+</div>
+
+<div id="mainScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('input_mimica')"> 
+     <div id="instructionText" class="sub-text">Introduce el código de la tarjeta y pulsa enter</div> 
+     <img id="rouletteResultImg" src="" alt="Resultado Categoría">
+     <div id="codeDisplay"></div> 
+</div> 
+
+<!-- PANTALLA DE CUENTA ATRÁS -->
+<div id="countdownScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('countdown')">
+    <div class="answer-bg"></div>
+    <div id="countdown" class="active-timer">40</div>
+</div>
+
+<div id="videoScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('video')"> 
+     <div class="celuloide-frame">
+         <div class="celuloide-overlay"></div>
+         <div id="audioModeIndicator">🔊</div> 
+         <div id="photoContainer" class="photo-container"><img id="imgSlide1" class="photo-slide"><img id="imgSlide2" class="photo-slide"></div>
+         <video id="videoPlayer"></video> 
+     </div>
+</div> 
+
+<div id="blackScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('black')"> 
+     <div class="answer-bg"></div>
+     <div class="metal-text" style="position:relative; z-index:10; font-size: 5.5vw; line-height: 1.2; animation: pulseIndicator 4s infinite ease-in-out;">PULSA ENTER PARA<br>VER LA SOLUCIÓN</div> 
+</div> 
+
+<div id="titleScreen" class="screen" style="display:none;" onclick="handleTouchClickScreen('title')"> 
+     <div class="answer-bg"></div>
+     <div id="answerBox" class="answer-box">
+         <div id="videoTitle" class="metal-text">TITULO</div> 
+         <div id="videoYear" class="metal-text">0000</div> 
+         <div id="videoDirector" class="metal-text">DIRECTOR</div> 
+     </div>
+</div> 
+
+<audio id="soundButton" src="medios/button.mp3" preload="auto"></audio>
+<audio id="soundIntro" src="medios/intro.mp3"></audio>
+<audio id="soundType" src="medios/type.mp3"></audio> 
+<audio id="soundClaqueta" src="medios/claqueta.mp3"></audio> 
+<audio id="soundError" src="medios/error.mp3"></audio> 
+<audio id="soundSelect" src="medios/select.mp3"></audio> 
+<audio id="soundEscape" src="medios/escape.mp3"></audio> 
+<audio id="soundRespuesta" src="medios/respuesta.mp3"></audio> 
+<audio id="soundBackground" src="medios/musica1.mp3" loop></audio> 
+
+<!-- AUDIOS DE CUENTA ATRÁS -->
+<audio id="soundSegundo" src="medios/segundo.mp3" preload="auto"></audio>
+<audio id="soundEscapeTimer" src="medios/escape.mp3" preload="auto"></audio>
+
+<script src="medios/datos.js"></script> 
+<script> 
+let state = "prestart"; 
+let gameType = "MOOVI"; 
+let numPlayers = 2;
+let gameMode = "video"; 
+let isRandomMode = false; 
+let code = ""; 
+let isUserMuted = false;  
+let photoTimer = null;
+let transitionFired = false;
+let dissolveTimer = null;
+let rouletteTimeout = null; 
+let countdownOrigin = null; // "hitster" o "mimica"
+let bgFadeInterval = null;
+
+const sequentialModes = ["video", "photos", "audio", "bso"];
+let currentRandomIndex = 0;
+let randomSequenceStarted = false;
+
+let rouletteStarted = false;  
+let rouletteFinished = false; 
+let resultadoVirtualRuleta = null; 
+let ultimoResultadoVirtual = null; 
+
+let jugadorMimicaSeleccionado = null;
+let bolsaJugadoresMimica = [];
+
+function sendVirtualKey(keyName) {
+    const event = new KeyboardEvent('keydown', { key: keyName });
+    document.dispatchEvent(event);
+}
+
+function handleTouchClickScreen(screenName) {
+    if (screenName === 'input_mimica' && resultadoVirtualRuleta !== "Mimica") {
+        return; 
+    }
+    sendVirtualKey("Enter");
+}
+
+function updateKeypadVisibility() {
+    const keypad = document.getElementById("onScreenKeypad");
+    const activeStates = ["game_type_selection", "players_selection", "mode_selection", "roulette", "input", "hitster", "countdown"];
+    if (activeStates.includes(state)) {
+        keypad.style.display = "grid";
+    } else {
+        keypad.style.display = "none";
+    }
+}
+
+function rellenarBolsaJugadoresMimica() {
+    bolsaJugadoresMimica = [];
+    for (let i = 1; i <= numPlayers; i++) {
+        bolsaJugadoresMimica.push(`medios/${i}.jpg`);
+    }
+
+    for (let i = bolsaJugadoresMimica.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bolsaJugadoresMimica[i], bolsaJugadoresMimica[j]] = [bolsaJugadoresMimica[j], bolsaJugadoresMimica[i]];
+    }
+}
+
+function obtenerJugadorMimicaSinRepeticion() {
+    if (!bolsaJugadoresMimica || bolsaJugadoresMimica.length === 0) {
+        rellenarBolsaJugadoresMimica();
+    }
+    return bolsaJugadoresMimica.pop();
+}
+
+let bolsaResultados = [];
+
+function rellenarBolsaResultados() {
+    bolsaResultados = [
+        "Mimica", "Mimica", "Mimica", "Mimica",
+        "Azul", "Lila", "Verde", "Amarillo", "Rosado", "Azul"
+    ];
+    for (let i = bolsaResultados.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bolsaResultados[i], bolsaResultados[j]] = [bolsaResultados[j], bolsaResultados[i]];
+    }
+}
+
+const ruletaEl = document.getElementById('ruleta');
+const rouletteResultImg = document.getElementById('rouletteResultImg');
+const hitsterImg = document.getElementById('hitsterImg');
+const totalFotogramas = 36; 
+
+let timeLeft = 40;
+let finalizadoTimer = false;
+let timer = null;
+let sound10Timeout = null;
+let autoJumpRuletaTimeout = null;
+const countdownElement = document.getElementById("countdown");
+
+const sectoresColores = [
+    { nombre: "Azul",     fotogramas: [0, 1, 2, 3, 33, 34, 35] },
+    { nombre: "Lila",     fotogramas: [4, 5, 6, 7, 8, 9, 10] },
+    { nombre: "Verde",    fotogramas: [11, 12, 13, 14, 15, 16, 17, 18] },
+    { nombre: "Amarillo", fotogramas: [19, 20, 21, 22, 23, 24, 25] },
+    { nombre: "Rosado",   fotogramas: [26, 27, 28, 29, 30, 31, 32] }
+];
+
+const sounds = { 
+    button: document.getElementById("soundButton"),
+    intro: document.getElementById("soundIntro"),
+    type: document.getElementById("soundType"), 
+    claqueta: document.getElementById("soundClaqueta"), 
+    error: document.getElementById("soundError"), 
+    select: document.getElementById("soundSelect"), 
+    escape: document.getElementById("soundEscape"), 
+    respuesta: document.getElementById("soundRespuesta"), 
+    bg: document.getElementById("soundBackground"),
+    sonidoRuleta: new Audio('medios/ruleta final.mp3'),
+    segundo: document.getElementById("soundSegundo"),
+    escapeTimer: document.getElementById("soundEscapeTimer")
+}; 
+
+const TARGET_BG_VOLUME = 0.032;
+sounds.bg.volume = TARGET_BG_VOLUME; 
+
+function fadeInBackgroundMusic() {
+    clearInterval(bgFadeInterval);
+    sounds.bg.volume = 0;
+    sounds.bg.play().catch(() => {});
+    
+    const duration = 2500;
+    const stepTime = 50;
+    const steps = duration / stepTime;
+    const volumeIncrement = TARGET_BG_VOLUME / steps;
+
+    bgFadeInterval = setInterval(() => {
+        if (sounds.bg.volume + volumeIncrement < TARGET_BG_VOLUME) {
+            sounds.bg.volume += volumeIncrement;
+        } else {
+            sounds.bg.volume = TARGET_BG_VOLUME;
+            clearInterval(bgFadeInterval);
+        }
+    }, stepTime);
+}
+
+const videoPlayer = document.getElementById("videoPlayer"); 
+const audioIndicator = document.getElementById("audioModeIndicator"); 
+const photoContainer = document.getElementById("photoContainer");
+const imgSlide1 = document.getElementById("imgSlide1");
+const imgSlide2 = document.getElementById("imgSlide2");
+const codeDisplay = document.getElementById("codeDisplay"); 
+const instructionText = document.getElementById("instructionText"); 
+const answerBox = document.getElementById("answerBox");
+const prestartScreen = document.getElementById("prestartScreen");
+const startBtnImg = document.getElementById("startBtnImg");
+const logoBox = document.getElementById("logoBox");
+const columbiaVideo = document.getElementById("columbiaVideo");
+const introAlphaVideo = document.getElementById("introAlphaVideo");
+
+function getTechnicolor() {
+    const colors = [
+        'rgba(180, 40, 40, 0.9)',    
+        'rgba(40, 100, 180, 0.9)',   
+        'rgba(160, 130, 20, 0.9)',   
+        'rgba(80, 40, 140, 0.9)',    
+        'rgba(80, 40, 140, 0.9)',    
+        'rgba(30, 120, 80, 0.9)',    
+        'rgba(200, 90, 30, 0.9)',    
+        'rgba(50, 50, 50, 0.95)'     
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function playSound(s) { if(s) { s.currentTime = 0; s.play().catch(()=>{}); } } 
+
+function playSegundoSound() {
+    playSound(sounds.segundo);
+}
+
+function resetCuentaAtrasVars() {
+    clearInterval(timer);
+    if (sound10Timeout) clearTimeout(sound10Timeout);
+    if (autoJumpRuletaTimeout) clearTimeout(autoJumpRuletaTimeout);
+    timer = null;
+    sound10Timeout = null;
+    autoJumpRuletaTimeout = null;
+    timeLeft = 40;
+    finalizadoTimer = false;
+    countdownElement.classList.remove('finished-timer');
+    countdownElement.classList.add('active-timer');
+    countdownElement.textContent = "40";
+}
+
+function finalizarCuentaAtras() {
+    if (finalizadoTimer) return;
+    finalizadoTimer = true;
+
+    clearInterval(timer);
+    if (sound10Timeout) clearTimeout(sound10Timeout);
+
+    countdownElement.classList.remove('active-timer');
+    countdownElement.classList.add('finished-timer');
+    countdownElement.textContent = "TIEMPO!!"; 
+
+    playSound(sounds.escapeTimer);
+
+    autoJumpRuletaTimeout = setTimeout(() => {
+        if (state === "countdown") {
+            if (countdownOrigin === "hitster" && !isUserMuted) { 
+                sounds.bg.play().catch(() => {}); 
+            } else if (countdownOrigin === "mimica" && !isUserMuted) { 
+                sounds.bg.muted = false; 
+            }
+            countdownOrigin = null;
+            loadRoulette();
+        }
+    }, 3000);
+}
+
+function iniciarContador() {
+    if (timer) return;
+
+    if (sounds.segundo) sounds.segundo.load();
+    if (sounds.escapeTimer) sounds.escapeTimer.load();
+
+    timer = setInterval(() => {
+        timeLeft--;
+        
+        if (timeLeft > 0) {
+            countdownElement.textContent = timeLeft;
+
+            if (timeLeft === 11) {
+                sound10Timeout = setTimeout(() => {
+                    if (!finalizadoTimer) playSegundoSound();
+                }, 1000);
+            }
+
+            if (timeLeft <= 9) {
+                playSegundoSound();
+            }
+        } else {
+            finalizarCuentaAtras();
+        }
+    }, 1000);
+}
+
+function detenerCuentaAtras() {
+    clearInterval(timer);
+    if (sound10Timeout) clearTimeout(sound10Timeout);
+    if (autoJumpRuletaTimeout) clearTimeout(autoJumpRuletaTimeout);
+    timer = null;
+    sound10Timeout = null;
+    autoJumpRuletaTimeout = null;
+}
+
+function triggerStartSequence() {
+    if (transitionFired) return;
+    transitionFired = true;
+    
+    playSound(sounds.button);
+
+    startBtnImg.src = "medios/2boton.png";
+    prestartScreen.classList.add("fade-out");
+    
+    setTimeout(() => {
+        state = "columbia";
+        updateKeypadVisibility();
+        prestartScreen.style.display = "none";
+        document.getElementById("columbiaScreen").style.display = "flex";
+        
+        columbiaVideo.currentTime = 0;
+        columbiaVideo.play().catch(() => {
+            startIntroScreen();
+        });
+    }, 600); 
+}
+
+function resetToPrestartScreen() {
+    columbiaVideo.pause();
+    columbiaVideo.currentTime = 0;
+    
+    transitionFired = false;
+    state = "prestart";
+    updateKeypadVisibility();
+    
+    startBtnImg.src = "medios/1boton.png";
+    prestartScreen.classList.remove("fade-out");
+    
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+    prestartScreen.style.display = "flex";
+}
+
+columbiaVideo.addEventListener("ended", () => {
+    startIntroScreen();
+});
+
+function startIntroScreen() {
+    if (state === "intro") return; 
+    state = "intro";
+    updateKeypadVisibility();
+
+    columbiaVideo.pause();
+    columbiaVideo.currentTime = 0;
+
+    document.getElementById("columbiaScreen").style.display = "none";
+    document.getElementById("introScreen").style.display = "flex";
+
+    sounds.intro.volume = 1;
+    playSound(sounds.intro);
+
+    dissolveTimer = setTimeout(() => {
+        if (state === "intro") {
+            logoBox.classList.add("dissolve-out");
+
+            introAlphaVideo.style.display = "block";
+            introAlphaVideo.currentTime = 0;
+            introAlphaVideo.play().catch(() => {});
+            
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    introAlphaVideo.classList.add("fade-in");
+                }, 20);
+            });
+        }
+    }, 10000);
+}
+
+introAlphaVideo.addEventListener("ended", () => {
+    if (state === "intro") {
+        setTimeout(() => {
+            if (state === "intro") {
+                goToGameTypeSelectionFromIntro();
+            }
+        }, 1000);
+    }
+});
+
+function goToGameTypeSelectionFromIntro() {
+    state = "game_type_selection";
+    updateKeypadVisibility();
+    
+    const audio = sounds.intro;
+    let fadeInterval = setInterval(() => {
+        if (audio.volume > 0.05) {
+            audio.volume -= 0.05;
+        } else {
+            clearInterval(fadeInterval);
+            audio.pause();
+            audio.volume = 1;
+        }
+    }, 20);
+
+    fadeInBackgroundMusic();
+    document.querySelectorAll(".curtain-bg, .curtain-overlay").forEach(el => el.style.display = "block");
+    document.getElementById("introScreen").style.display = "none";
+    document.getElementById("gameTypeScreen").style.display = "flex";
+}
+
+function checkRandomizeMode(currentCode) {
+    if (isRandomMode) {
+        if (!randomSequenceStarted) {
+            currentRandomIndex = Math.floor(Math.random() * sequentialModes.length);
+            randomSequenceStarted = true;
+        } else {
+            currentRandomIndex = (currentRandomIndex + 1) % sequentialModes.length;
+        }
+        
+        gameMode = sequentialModes[currentRandomIndex];
+
+        if (gameMode === "bso" && videoDB[currentCode] && !videoDB[currentCode].BSO) {
+            currentRandomIndex = (currentRandomIndex + 1) % sequentialModes.length;
+            gameMode = sequentialModes[currentRandomIndex];
+        }
+    }
+}
+
+function actualizarPosicionVisual(frame) {
+    const frameNormalizado = Math.floor(frame) % totalFotogramas;
+    ruletaEl.style.backgroundPosition = `${-(frameNormalizado * 80)}vmin 0px`;
+}
+
+function obtenerResultadoGarantizado() {
+    if (bolsaResultados.length === 0) {
+        rellenarBolsaResultados();
+    }
+
+    let indiceElegido = 0;
+    let candidato = bolsaResultados[indiceElegido];
+
+    if (ultimoResultadoVirtual === "Mimica" && candidato === "Mimica") {
+        const indiceNoMimica = bolsaResultados.findIndex(item => item !== "Mimica");
+        if (indiceNoMimica !== -1) {
+            indiceElegido = indiceNoMimica;
+            candidato = bolsaResultados[indiceElegido];
+        }
+    }
+
+    bolsaResultados.splice(indiceElegido, 1);
+    return candidato;
+}
+
+function obtenerImagenCategoria() {
+    if (resultadoVirtualRuleta === "Mimica") {
+        if (!jugadorMimicaSeleccionado) {
+            jugadorMimicaSeleccionado = obtenerJugadorMimicaSinRepeticion();
+        }
+        return jugadorMimicaSeleccionado;
+    }
+
+    if (resultadoVirtualRuleta === "Azul") return "medios/2años.png";
+    if (resultadoVirtualRuleta === "Amarillo") return "medios/4años.png";
+    if (resultadoVirtualRuleta === "Rosado") return "medios/2000s.png";
+    if (resultadoVirtualRuleta === "Lila") return "medios/decada.png";
+    if (resultadoVirtualRuleta === "Verde") return "medios/director.png";
+    return "";
+}
+
+function procesarResultadoRuleta() {
+    playSound(sounds.select);
+    
+    let esHitster = false;
+    if (gameType === "MOOVI + HITSTER") {
+        esHitster = Math.random() < 0.5;
+    }
+
+    if (esHitster) {
+        showHitsterScreen();
+    } else {
+        goToInputScreen();
+    }
+}
+
+function iniciarGiroRuleta() {
+    rouletteStarted = true;
+
+    sounds.sonidoRuleta.currentTime = 0;
+    sounds.sonidoRuleta.play().catch(() => {});
+
+    const duracionGiroRapido = 2500; 
+    const duracionFreno = 3500;      
+    const tiempoTotal = duracionGiroRapido + duracionFreno; 
+
+    resultadoVirtualRuleta = obtenerResultadoGarantizado();
+
+    let sectorVisualDestino;
+    if (resultadoVirtualRuleta === "Mimica") {
+        sectorVisualDestino = sectoresColores[Math.floor(Math.random() * sectoresColores.length)];
+    } else {
+        sectorVisualDestino = sectoresColores.find(s => s.nombre === resultadoVirtualRuleta);
+    }
+
+    const indiceFotograma = Math.floor(Math.random() * sectorVisualDestino.fotogramas.length);
+    const fotogramaDestino = sectorVisualDestino.fotogramas[indiceFotograma];
+
+    const velocidadMaxima = 0.08; 
+    const tiempoInicio = performance.now();
+
+    let fotogramaInicioFreno = 0;
+    let inerciasCalculadas = false;
+    let fotogramasTotalesFreno = 0;
+
+    function animar(tiempoActual) {
+        if (state !== "roulette") return;
+
+        const tiempoTranscurrido = tiempoActual - tiempoInicio;
+
+        if (tiempoTranscurrido < duracionGiroRapido) {
+            let frameActual = (tiempoTranscurrido * velocidadMaxima) % totalFotogramas;
+            actualizarPosicionVisual(frameActual);
+            fotogramaInicioFreno = frameActual; 
+            requestAnimationFrame(animar);
+        } 
+        else if (tiempoTranscurrido < tiempoTotal) {
+            if (!inerciasCalculadas) {
+                const posicionActualMod = fotogramaInicioFreno % totalFotogramas;
+                fotogramasTotalesFreno = (totalFotogramas * 3) + (fotogramaDestino - posicionActualMod);
+                if (fotogramasTotalesFreno < totalFotogramas * 3) {
+                    fotogramasTotalesFreno += totalFotogramas;
+                }
+                inerciasCalculadas = true;
+            }
+
+            let tiempoFrenando = tiempoTranscurrido - duracionGiroRapido;
+            let progresoFreno = tiempoFrenando / duracionFreno;
+            let factorSuave = 1 - (1 - progresoFreno) * (1 - progresoFreno);
+            let fotogramasAvanzados = fotogramasTotalesFreno * factorSuave;
+            let frameFinal = fotogramaInicioFreno + fotogramasAvanzados;
+
+            actualizarPosicionVisual(frameFinal);
+            requestAnimationFrame(animar);
+        } 
+        else {
+            actualizarPosicionVisual(fotogramaDestino);
+            sounds.sonidoRuleta.pause();
+            ultimoResultadoVirtual = resultadoVirtualRuleta;
+            rouletteFinished = true;
+
+            clearTimeout(rouletteTimeout);
+            rouletteTimeout = setTimeout(() => {
+                if (state === "roulette" && rouletteFinished) {
+                    procesarResultadoRuleta();
+                }
+            }, 500);
+        }
+    }
+    requestAnimationFrame(animar);
+}
+
+document.addEventListener("keydown", (e) => { 
+    if (e.key.toLowerCase() === "m") { isUserMuted = !isUserMuted; sounds.bg.muted = isUserMuted; return; } 
+
+    if (state === "prestart" && e.key === "Enter") {
+        triggerStartSequence();
+        return;
+    }
+
+    if (state === "columbia" && e.key === "Escape") {
+        resetToPrestartScreen();
+        return;
+    }
+
+    if (state === "columbia" && e.key === "Enter") {
+        startIntroScreen();
+        return;
+    }
+
+    if (state === "intro" && e.key === "Enter") {
+        clearTimeout(dissolveTimer);
+        introAlphaVideo.pause();
+        goToGameTypeSelectionFromIntro();
+        return;
+    }
+
+    if (state === "hitster" && e.key === "Enter") {
+        playSound(sounds.select);
+        loadRoulette();
+        return;
+    }
+
+    if (state === "hitster" && e.key === "*") {
+        countdownOrigin = "hitster";
+        sounds.bg.pause();
+        state = "countdown";
+        updateKeypadVisibility();
+        document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+        document.getElementById("countdownScreen").style.display = "flex";
+        resetCuentaAtrasVars();
+        iniciarContador();
+        return;
+    }
+
+    if (state === "countdown" && e.key === "Enter") {
+        playSound(sounds.select);
+        detenerCuentaAtras();
+        if (countdownOrigin === "hitster") {
+            if (!isUserMuted) { sounds.bg.play().catch(() => {}); }
+            loadRoulette();
+        } else if (countdownOrigin === "mimica") {
+            if (!isUserMuted) { sounds.bg.muted = false; }
+            loadRoulette();
+        } else {
+            if (!isUserMuted) { sounds.bg.muted = false; }
+            resetToInput();
+        }
+        countdownOrigin = null;
+        return;
+    }
+
+    if (e.key === "Escape") { 
+        if (state === "intro" || state === "prestart" || state === "game_type_selection") return; 
+        
+        playSound(sounds.escape); 
+        clearTimeout(photoTimer);
+        clearTimeout(rouletteTimeout); 
+        sounds.sonidoRuleta.pause();
+
+        if (state === "roulette") {
+            resetToModeSelection();
+            return;
+        }
+
+        if (state === "players_selection") {
+            state = "game_type_selection";
+            updateKeypadVisibility();
+            document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+            document.getElementById("gameTypeScreen").style.display = "flex";
+            return;
+        }
+
+        if (state === "mode_selection") {
+            state = "players_selection";
+            updateKeypadVisibility();
+            document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+            document.getElementById("playersScreen").style.display = "flex";
+            return;
+        }
+
+        if (state === "hitster") {
+            loadRoulette();
+            return;
+        }
+
+        if (state === "countdown") {
+            detenerCuentaAtras();
+            if (countdownOrigin === "hitster") {
+                countdownOrigin = null;
+                if (!isUserMuted) { sounds.bg.play().catch(() => {}); }
+                showHitsterScreen();
+            } else if (countdownOrigin === "mimica") {
+                countdownOrigin = null;
+                if (!isUserMuted) { sounds.bg.muted = false; }
+                resetToInput();
+            } else {
+                if (!isUserMuted) { sounds.bg.muted = false; }
+                resetToInput();
+            }
+            return;
+        }
+
+        if (state === "video" || state === "waiting") {
+            if (!isUserMuted) { sounds.bg.muted = false; }
+        }
+
+        if (state === "input") {
+            loadRoulette();
+        } else {
+            resetToInput();
+        }
+        return; 
+    } 
+
+    if (state === "game_type_selection") {
+        if (e.key === "1") {
+            gameType = "MOOVI";
+            playSound(sounds.select);
+            state = "players_selection";
+            updateKeypadVisibility();
+            document.getElementById("gameTypeScreen").style.display = "none";
+            document.getElementById("playersScreen").style.display = "flex";
+        } else if (e.key === "2") {
+            gameType = "MOOVI + HITSTER";
+            playSound(sounds.select);
+            state = "players_selection";
+            updateKeypadVisibility();
+            document.getElementById("gameTypeScreen").style.display = "none";
+            document.getElementById("playersScreen").style.display = "flex";
+        }
+    } else if (state === "players_selection") {
+        if (e.key === "2" || e.key === "3" || e.key === "4" || e.key === "5" || e.key === "6") {
+            numPlayers = parseInt(e.key, 10);
+            rellenarBolsaJugadoresMimica(); 
+            playSound(sounds.select);
+            state = "mode_selection";
+            updateKeypadVisibility();
+            document.getElementById("playersScreen").style.display = "none";
+            document.getElementById("modeScreen").style.display = "flex";
+        }
+    } else if (state === "mode_selection") { 
+        if (e.key === "1" || e.key === "2" || e.key === "3" || e.key === "4" || e.key === "5") { 
+            if (e.key === "5") {
+                isRandomMode = true;
+                randomSequenceStarted = false;
+            } else {
+                isRandomMode = false; 
+                const modes = { "1": "video", "2": "photos", "3": "audio", "4": "bso" };
+                gameMode = modes[e.key];
+            }
+            
+            playSound(sounds.select); 
+            loadRoulette(); 
+        } 
+    } else if (state === "roulette") {
+        if (e.key === "Enter") {
+            if (!rouletteStarted) {
+                iniciarGiroRuleta();
+            } else if (rouletteFinished) {
+                clearTimeout(rouletteTimeout); 
+                procesarResultadoRuleta();
+            }
+        }
+    } else if (state === "input") { 
+        if (e.key === "*") {
+            countdownOrigin = "mimica";
+            state = "countdown";
+            updateKeypadVisibility();
+            document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+            document.getElementById("countdownScreen").style.display = "flex";
+            resetCuentaAtrasVars();
+            iniciarContador();
+            return;
+        }
+
+        if (resultadoVirtualRuleta === "Mimica") {
+            if (e.key === "Enter") {
+                loadRoulette();
+            }
+            return;
+        }
+
+        if (e.key >= "0" && e.key <= "9" && code.length < 3) { 
+            code += e.key; 
+            playSound(sounds.type); 
+            updateDisplay(true); 
+        } else if (e.key === "Backspace") { 
+            code = code.slice(0, -1); 
+            playSound(sounds.type); 
+            updateDisplay(); 
+        } else if (e.key === "Enter") { 
+            if (code.length > 0 && videoDB[code]) {
+                checkRandomizeMode(code);
+
+                if (gameMode === "bso" && !videoDB[code].BSO) {
+                    triggerError();
+                } else {
+                    handleStartSequence(); 
+                }
+            } else {
+                triggerError(); 
+            }
+        } 
+    } else if (state === "black" && e.key === "Enter") { 
+        playSound(sounds.respuesta); 
+        showTitle(); 
+    } else if (state === "title" && e.key === "Enter") { 
+        playSound(sounds.select); 
+        code = "";
+        loadRoulette(); 
+    } else if (state === "video" && e.key === "Enter") { 
+        stopCurrentMedia();
+    } 
+}); 
+
+function loadRoulette() {
+    if (countdownOrigin === "hitster") {
+        if (!isUserMuted) { sounds.bg.play().catch(() => {}); }
+    }
+    countdownOrigin = null;
+    state = "roulette";
+    updateKeypadVisibility();
+    rouletteStarted = false;
+    rouletteFinished = false; 
+    resultadoVirtualRuleta = null; 
+    jugadorMimicaSeleccionado = null;
+    clearTimeout(rouletteTimeout); 
+    actualizarPosicionVisual(0);
+    document.querySelectorAll(".curtain-bg, .curtain-overlay").forEach(el => el.style.display = "block");
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none"); 
+    document.getElementById("rouletteScreen").style.display = "flex";
+}
+
+function showHitsterScreen() {
+    state = "hitster";
+    updateKeypadVisibility();
+    
+    let colorHitster = resultadoVirtualRuleta;
+    
+    if (!colorHitster || colorHitster === "Mimica") {
+        const coloresValidosHitster = ["Azul", "Lila", "Verde", "Amarillo", "Rosado"];
+        colorHitster = coloresValidosHitster[Math.floor(Math.random() * coloresValidosHitster.length)];
+    }
+
+    let imgPath = "";
+    if (colorHitster === "Azul") imgPath = "medios/2años.png";
+    else if (colorHitster === "Amarillo") imgPath = "medios/4años.png";
+    else if (colorHitster === "Rosado") imgPath = "medios/2000s.png";
+    else if (colorHitster === "Lila") imgPath = "medios/decada.png";
+    else if (colorHitster === "Verde") imgPath = "medios/director.png";
+
+    hitsterImg.src = imgPath;
+    
+    const hitsterScr = document.getElementById("hitsterScreen");
+    document.querySelectorAll(".curtain-bg, .curtain-overlay").forEach(el => el.style.display = "block");
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+    hitsterScr.style.display = "flex";
+    
+    hitsterScr.classList.remove("zoom-in-screen");
+    void hitsterScr.offsetWidth; 
+    hitsterScr.classList.add("zoom-in-screen");
+}
+
+function goToInputScreen() {
+    state = "input";
+    updateKeypadVisibility();
+    
+    const imgPath = obtenerImagenCategoria();
+    if (imgPath) {
+        rouletteResultImg.src = imgPath;
+        rouletteResultImg.style.display = "block";
+    } else {
+        rouletteResultImg.src = "";
+        rouletteResultImg.style.display = "none";
+    }
+
+    const mainScr = document.getElementById("mainScreen");
+    document.querySelectorAll(".curtain-bg, .curtain-overlay").forEach(el => el.style.display = "block");
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none"); 
+    mainScr.style.display = "flex"; 
+    mainScr.classList.remove("zoom-in-screen");
+    void mainScr.offsetWidth; 
+    mainScr.classList.add("zoom-in-screen");
+    updateDisplay(); 
+}
+
+function updateDisplay(isNewNumber = false) { 
+    if (resultadoVirtualRuleta === "Mimica") {
+        instructionText.style.display = "none";
+        codeDisplay.innerHTML = `<div class="metal-text mimica-title">MÍMICA</div>`;
+        return;
+    }
+
+    instructionText.style.display = "block";
+    codeDisplay.innerHTML = ""; 
+    for (let i = 0; i < 3; i++) { 
+        const box = document.createElement("div"); 
+        box.className = "num-box"; 
+        const charToShow = i < code.length ? code[i] : '_';
+        box.innerHTML = `<b class="metal-text">${charToShow}</b>`; 
+        if (isNewNumber && i === code.length - 1) { box.classList.add("pop"); }
+        codeDisplay.appendChild(box); 
+    } 
+} 
+
+function handleStartSequence() { 
+    state = "waiting"; 
+    updateKeypadVisibility();
+    if (gameMode !== "photos") { sounds.bg.muted = true; }
+    playSound(sounds.claqueta); 
+    sounds.claqueta.onended = () => { if (state === "waiting") startMedia(videoDB[code]); }; 
+} 
+
+function startMedia(data) { 
+    state = "video"; 
+    updateKeypadVisibility();
+    document.querySelectorAll(".curtain-bg, .curtain-overlay").forEach(el => el.style.display = "none");
+    document.getElementById("mainScreen").style.display = "none"; 
+    document.getElementById("videoScreen").style.display = "flex"; 
+    
+    videoPlayer.style.position = "absolute";
+    videoPlayer.style.left = "";
+    videoPlayer.style.opacity = 1;
+    videoPlayer.style.display = "none"; 
+    
+    audioIndicator.style.display = "none"; 
+    photoContainer.style.display = "none";
+    photoContainer.classList.remove("fade-in-container", "fade-out-container");
+    imgSlide1.classList.remove("active"); imgSlide2.classList.remove("active");
+
+    if (gameMode === "video") {
+        videoPlayer.style.display = "block";
+        videoPlayer.src = "videos/" + data.src; videoPlayer.play();
+        videoPlayer.ontimeupdate = () => { if (videoPlayer.duration - videoPlayer.currentTime < 0.5) stopCurrentMedia(); };
+    } 
+    else if (gameMode === "photos") {
+        photoContainer.style.display = "block"; photoContainer.classList.add("fade-in-container");
+        const baseName = data.src.split('.')[0]; 
+        imgSlide1.src = `videos/${baseName}-img1.jpg`; imgSlide2.src = `videos/${baseName}-img2.jpg`;
+        imgSlide1.classList.add("active");
+         
+        photoTimer = setTimeout(() => {
+            imgSlide1.classList.remove("active"); 
+            imgSlide2.classList.add("active");
+             
+            photoTimer = setTimeout(() => {
+                photoContainer.classList.add("fade-out-container");
+                setTimeout(() => { stopCurrentMedia(); }, 1500); 
+            }, 12000); 
+        }, 12000);
+    } 
+    else if (gameMode === "audio") {
+        audioIndicator.textContent = "🔊";
+        audioIndicator.style.display = "block"; 
+        
+        videoPlayer.style.display = "block"; 
+        videoPlayer.style.left = "-9999px"; 
+        
+        videoPlayer.src = "videos/" + data.src;
+        videoPlayer.play();
+        videoPlayer.ontimeupdate = () => { if (videoPlayer.duration - videoPlayer.currentTime < 0.5) stopCurrentMedia(); };
+    }
+    else if (gameMode === "bso") {
+        audioIndicator.textContent = "🎵";
+        audioIndicator.style.display = "block"; 
+        
+        videoPlayer.style.display = "block"; 
+        videoPlayer.style.left = "-9999px"; 
+        
+        videoPlayer.src = "bso/" + (data.BSCO || data.BSO); 
+        videoPlayer.play();
+        videoPlayer.ontimeupdate = () => { if (videoPlayer.duration - videoPlayer.currentTime < 0.5) stopCurrentMedia(); };
+    }
+} 
+
+function stopCurrentMedia() { 
+    clearTimeout(photoTimer); 
+    videoPlayer.pause(); 
+    state = "black"; 
+    updateKeypadVisibility();
+     
+    playSound(sounds.escape); 
+
+    if (!isUserMuted) { sounds.bg.muted = false; }
+    document.getElementById("videoScreen").style.display = "none"; 
+    document.getElementById("blackScreen").style.display = "flex"; 
+} 
+
+function showTitle() { 
+    state = "title"; 
+    updateKeypadVisibility();
+    const m = videoDB[code]; 
+    answerBox.style.backgroundColor = getTechnicolor(); 
+    document.getElementById("blackScreen").style.display = "none"; 
+    document.getElementById("titleScreen").style.display = "flex"; 
+
+    const titleEl = document.getElementById("videoTitle");
+    const yearEl = document.getElementById("videoYear");
+    const directorEl = document.getElementById("videoDirector");
+
+    let categoriaActiva = resultadoVirtualRuleta;
+
+    titleEl.style.display = "none";
+    yearEl.style.display = "none";
+    directorEl.style.display = "none";
+
+    const numYear = parseInt(m.year, 10);
+
+    switch (categoriaActiva) {
+        case "Verde":
+            titleEl.textContent = m.title;
+            titleEl.style.display = "block";
+            break;
+
+        case "Azul":
+        case "Amarillo":
+            yearEl.textContent = m.year;
+            yearEl.style.display = "block";
+            break;
+
+        case "Rosado":
+            if (numYear < 2000) {
+                yearEl.textContent = "antes del 2000";
+            } else if (numYear > 2000) {
+                yearEl.textContent = "despues del 2000";
+            } else {
+                yearEl.textContent = "año 2000";
+            }
+            yearEl.style.display = "block";
+            break;
+
+        case "Lila":
+            if (numYear >= 1960 && numYear <= 1969) {
+                yearEl.textContent = "Años 60's";
+            } else if (numYear >= 1970 && numYear <= 1979) {
+                yearEl.textContent = "Años 70's";
+            } else if (numYear >= 1980 && numYear <= 1989) {
+                yearEl.textContent = "Años 80's";
+            } else if (numYear >= 1990 && numYear <= 1999) {
+                yearEl.textContent = "Años 90's";
+            } else if (numYear >= 2000 && numYear <= 2009) {
+                yearEl.textContent = "Años 00's";
+            } else if (numYear >= 2010 && numYear <= 2019) {
+                yearEl.textContent = "La década de 2010";
+            } else if (numYear >= 2020 && numYear <= 2029) {
+                yearEl.textContent = "La década de 2020";
+            } else {
+                yearEl.textContent = m.year;
+            }
+            yearEl.style.display = "block";
+            break;
+
+        default:
+            titleEl.textContent = m.title;
+            yearEl.textContent = m.year;
+            directorEl.textContent = m.director;
+            titleEl.style.display = "block";
+            yearEl.style.display = "block";
+            directorEl.style.display = "block";
+            break;
+    }
+} 
+
+function resetToInput() { 
+    state = "input"; 
+    updateKeypadVisibility();
+    code = ""; 
+    detenerCuentaAtras();
+    videoPlayer.pause(); 
+    if (!isUserMuted) { sounds.bg.muted = false; } 
+    videoPlayer.src = ""; 
+    document.querySelectorAll(".curtain-bg, .curtain-overlay").forEach(el => el.style.display = "block");
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none"); 
+    document.getElementById("mainScreen").style.display = "flex"; 
+    updateDisplay(); 
+} 
+
+function resetToModeSelection() { 
+    state = "mode_selection"; 
+    updateKeypadVisibility();
+    code = ""; 
+    isRandomMode = false; 
+    randomSequenceStarted = false; 
+    ultimoResultadoVirtual = null; 
+    jugadorMimicaSeleccionado = null;
+    detenerCuentaAtras();
+    if (!isUserMuted) { sounds.bg.muted = false; } 
+    document.querySelectorAll(".curtain-bg, .curtain-overlay").forEach(el => el.style.display = "block");
+    document.querySelectorAll(".screen").forEach(s => s.style.display = "none"); 
+    document.getElementById("modeScreen").style.display = "flex"; 
+} 
+
+function triggerError() { 
+    playSound(sounds.error); 
+    instructionText.style.visibility = "hidden"; 
+    rouletteResultImg.style.display = "none"; 
+    codeDisplay.innerHTML = '<span class="error-msg">CÓDIGO ERRÓNEO</span>'; 
+    
+    setTimeout(() => { 
+        code = ""; 
+        updateDisplay(); 
+        instructionText.style.visibility = "visible"; 
+        if (rouletteResultImg.src && !rouletteResultImg.src.endsWith('/')) {
+            rouletteResultImg.style.display = "block"; 
+        }
+    }, 800); 
+} 
+</script> 
+</body> 
+</html>
